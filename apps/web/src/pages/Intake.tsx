@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { Icon, Pill, Button, Card } from '../lib/ui';
+import { markDisclosureRan } from './Calendar';
 
 // ─── Pre-baked demo results (pure frontend, zero API) ────────────────────────
 const DEMO_FILES = [
@@ -156,6 +157,7 @@ export function Intake({ onChanged }: { onChanged: () => void }) {
     setProcessing(false);
     setFiles(DEMO_FILES);
     setAnomalies(DEMO_ANOMALIES);
+    markDisclosureRan(); // surfaces 3 follow-up items on the Calendar for this week
     onChanged();
   }
 
@@ -266,6 +268,11 @@ export function Intake({ onChanged }: { onChanged: () => void }) {
               <Button onClick={() => { setFiles(null); setError(''); setStep(0); }}>
                 Process another package
               </Button>
+            </div>
+
+            <div className="p-space-md bg-status-satisfied-bg border border-status-satisfied-border rounded font-body-compact text-body-compact text-status-satisfied-fg flex items-center gap-space-sm">
+              <Icon name="calendar_today" className="text-[18px] shrink-0" />
+              3 follow-up items added to your Deadlines for this week — review unidentified documents, chase Crown, and serve acknowledgement.
             </div>
 
             {anomalies > 0 && (

@@ -320,31 +320,6 @@ export function Intake({ onChanged, setPage }: { onChanged: () => void; setPage:
               </Button>
             </div>
 
-            <div className="p-space-md bg-status-satisfied-bg border border-status-satisfied-border rounded font-body-compact text-body-compact text-status-satisfied-fg flex items-center gap-space-sm">
-              <Icon name="calendar_today" className="text-[18px] shrink-0" />
-              3 follow-up items added to your Deadlines for this week — review unidentified documents, chase Crown, and serve acknowledgement.
-            </div>
-
-            {anomalies > 0 && (
-              <div className="p-space-md bg-status-awaiting-bg border border-status-awaiting-border rounded font-body-compact text-body-compact text-status-awaiting-fg flex items-center gap-space-sm">
-                <Icon name="info" className="text-[18px] shrink-0" />
-                {anomalies} document{anomalies > 1 ? 's differ' : ' differs'} from what was served earlier.
-                Open Disclosure Register → Document Differences to review the changes.
-              </div>
-            )}
-
-            {flaggedCount > 0 && (
-              <div
-                className="p-space-md bg-status-awaiting-bg/60 border border-status-awaiting-border rounded font-body-compact text-body-compact text-status-awaiting-fg flex items-center justify-between gap-space-sm cursor-pointer hover:bg-status-awaiting-bg transition-colors"
-                onClick={() => setPage('review')}>
-                <span className="flex items-center gap-space-sm">
-                  <Icon name="flag" className="text-[18px] shrink-0" />
-                  {flaggedCount} document{flaggedCount > 1 ? 's need' : ' needs'} your review — click to open Pending Review
-                </span>
-                <Icon name="arrow_forward" className="text-[18px] shrink-0" />
-              </div>
-            )}
-
             {files.map((f) => (
               <FileCard key={f.id} f={f}
                 onReview={f.status === 'flagged' ? () => setPage('review') : undefined}

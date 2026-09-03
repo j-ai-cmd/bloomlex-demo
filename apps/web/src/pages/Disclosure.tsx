@@ -13,13 +13,14 @@ const NEXT_STATES: Record<string, string[]> = {
   'Follow-up Recommended': ['Acknowledged', 'Partially Received', 'Satisfied', 'Refused', 'Needs Review'],
 };
 
-type FilterKey = 'all' | 'matched' | 'partial' | 'requested';
+type FilterKey = 'all' | 'matched' | 'partial' | 'requested' | 'pending_review';
 
 const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: 'all',       label: 'All documents'       },
-  { key: 'matched',   label: 'Verified documents'  },
-  { key: 'partial',   label: 'Partially received'  },
-  { key: 'requested', label: 'Requested documents' },
+  { key: 'all',            label: 'All documents'       },
+  { key: 'matched',        label: 'Verified documents'  },
+  { key: 'partial',        label: 'Partially received'  },
+  { key: 'requested',      label: 'Requested documents' },
+  { key: 'pending_review', label: 'Pending Review'      },
 ];
 
 function matchesFilter(state: string, filter: FilterKey) {
@@ -60,7 +61,7 @@ function StateTag({ state, onChangeState }: { state: string; onChangeState: (s: 
   return (
     <div className="relative shrink-0">
       <button ref={btnRef} onClick={toggle} className="flex items-center gap-space-2xs group">
-        <Pill tone={stateTone(state)}>{state}</Pill>
+        <Pill tone={stateTone(state)}>{state === 'Satisfied' ? 'Verified' : state}</Pill>
         {options.length > 0 && (
           <Icon name="expand_more" className={`text-[14px] text-on-surface-variant transition-transform ${open ? 'rotate-180' : ''}`} />
         )}
@@ -81,7 +82,7 @@ function StateTag({ state, onChangeState }: { state: string; onChangeState: (s: 
                 : s === 'Refused'            ? 'bg-status-closed-fg'
                 : s === 'Needs Review'       ? 'bg-status-awaiting-fg'
                 : 'bg-on-surface-variant'}`} />
-              {s}
+              {s === 'Satisfied' ? 'Verified' : s}
             </button>
           ))}
         </div>
@@ -145,14 +146,19 @@ export function Disclosure() {
   const [register, setRegister]     = useState<any>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filter, setFilter]         = useState<FilterKey>('all');
+  const [reviewItems, setReviewItems] = useState<any[]>([]);
   // client-side state overrides (demo — no API write needed)
   const [stateOverrides, setStateOverrides] = useState<Record<string, string>>({});
 
   useEffect(() => {
     api('/v1/matters').then((m: any[]) => {
-      setMatters(m);
-      setMatterId(m.find((x) => x.matter_ref === 'R. v. Okafor')?.id ?? m[0]?.id ?? '');
+      const sorted = [...m].sort((a, b) =>
+        a.matter_ref === 'R. v. Okafor' ? -1 : b.matter_ref === 'R. v. Okafor' ? 1 : 0
+      );
+      setMatters(sorted);
+      setMatterId(sorted.find((x) => x.matter_ref === 'R. v. Okafor')?.id ?? sorted[0]?.id ?? '');
     });
+    api('/v1/review-queue').then((q: any) => setReviewItems(q.review_items ?? []));
   }, []);
 
   useEffect(() => {
@@ -173,15 +179,22 @@ export function Disclosure() {
     setStateOverrides((prev) => ({ ...prev, [itemId]: newState }));
   }
 
-  const shown  = items.filter((it) => matchesFilter(effectiveState(it), filter));
+  const matterReviewItems = matter
+    ? reviewItems.filter((r) => r.matter_ref === matter.matter_ref)
+    : [];
+
+  const shown  = filter === 'pending_review'
+    ? []  // pending_review shows reviewItems, not register items
+    : items.filter((it) => matchesFilter(effectiveState(it), filter));
   const expanded = expandedId ? items.find((it) => it.id === expandedId) : null;
 
   // Filter chip counts
   const counts: Record<FilterKey, number> = {
-    all:       items.length,
-    matched:   items.filter((i) => matchesFilter(effectiveState(i), 'matched')).length,
-    partial:   items.filter((i) => matchesFilter(effectiveState(i), 'partial')).length,
-    requested: items.filter((i) => matchesFilter(effectiveState(i), 'requested')).length,
+    all:            items.length,
+    matched:        items.filter((i) => matchesFilter(effectiveState(i), 'matched')).length,
+    partial:        items.filter((i) => matchesFilter(effectiveState(i), 'partial')).length,
+    requested:      items.filter((i) => matchesFilter(effectiveState(i), 'requested')).length,
+    pending_review: matterReviewItems.length,
   };
 
   return (
@@ -274,11 +287,28 @@ export function Disclosure() {
                 </div>
               )}
 
-              {register && shown.length === 0 && (
+              {filter === 'pending_review' && matterReviewItems.length === 0 && (
+                <Empty>No pending review items for this matter.</Empty>
+              )}
+
+              {filter === 'pending_review' && matterReviewItems.length > 0 && (
+                <div className="flex flex-col divide-y divide-surface-border border border-surface-border rounded-lg overflow-hidden">
+                  {matterReviewItems.map((r: any) => (
+                    <div key={r.id} className="bg-surface-container-lowest p-space-md flex flex-col gap-space-2xs">
+                      <span className="font-body-strong text-body-strong text-on-surface">{r.title}</span>
+                      <span className="font-caption-meta text-caption-meta text-on-surface-variant">
+                        Flagged for review · {r.matter_ref}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {filter !== 'pending_review' && register && shown.length === 0 && (
                 <Empty>No documents match this filter.</Empty>
               )}
 
-              {register && shown.length > 0 && (
+              {filter !== 'pending_review' && register && shown.length > 0 && (
                 <div className="flex flex-col divide-y divide-surface-border border border-surface-border rounded-lg overflow-hidden">
                   {shown.map((it: any) => {
                     const state = effectiveState(it);

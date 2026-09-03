@@ -258,7 +258,6 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
         <div className="w-full lg:w-inspector-width bg-surface-container-low border-l border-surface-border p-space-lg flex flex-col gap-space-xl">
           <div className="flex flex-col gap-space-sm">
             <span className="font-headline-matter font-bold text-xs uppercase tracking-wider text-on-surface">September 2026</span>
-            <p className="font-caption-meta text-caption-meta text-on-surface-variant">Days with deadlines.</p>
             <div className="flex flex-col gap-space-xs max-h-[60vh] overflow-y-auto">
               {monthDays.map(({ date, count }) => {
                 const items = allForDay(date);
@@ -285,15 +284,6 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
             </div>
           </div>
 
-          <div className="flex flex-col gap-space-sm">
-            <span className="font-headline-matter font-bold text-xs uppercase tracking-wider text-on-surface">Legend</span>
-            {Object.entries(CATEGORY).map(([k, v]) => (
-              <div key={k} className="flex items-center gap-space-xs">
-                <div className={`w-1 h-4 rounded ${v.bar.replace('border-l-', 'bg-')}`} />
-                <span className="font-code-timestamp text-caption-meta text-on-surface-variant">{v.label}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>

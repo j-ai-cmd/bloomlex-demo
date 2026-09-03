@@ -13,14 +13,13 @@ const NEXT_STATES: Record<string, string[]> = {
   'Follow-up Recommended': ['Acknowledged', 'Partially Received', 'Satisfied', 'Refused', 'Needs Review'],
 };
 
-type FilterKey = 'all' | 'matched' | 'requested' | 'partial' | 'satisfied';
+type FilterKey = 'all' | 'matched' | 'requested' | 'partial';
 
 const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: 'all',       label: 'All documents'      },
-  { key: 'matched',   label: 'Matched documents'   },
-  { key: 'requested', label: 'Requested documents' },
-  { key: 'partial',   label: 'Partially received'  },
-  { key: 'satisfied', label: 'Satisfied'            },
+  { key: 'all',       label: 'All documents'        },
+  { key: 'matched',   label: 'Verified documents'   },
+  { key: 'requested', label: 'Requested documents'  },
+  { key: 'partial',   label: 'Partially received'   },
 ];
 
 function matchesFilter(state: string, filter: FilterKey) {
@@ -28,7 +27,6 @@ function matchesFilter(state: string, filter: FilterKey) {
     case 'matched':   return state === 'Satisfied' || state === 'Partially Received';
     case 'requested': return ['Requested', 'Acknowledged', 'Follow-up Recommended'].includes(state);
     case 'partial':   return state === 'Partially Received';
-    case 'satisfied': return state === 'Satisfied';
     default:          return true;
   }
 }
@@ -36,29 +34,41 @@ function matchesFilter(state: string, filter: FilterKey) {
 // ─── State tag with inline dropdown ──────────────────────────────────────────
 function StateTag({ state, onChangeState }: { state: string; onChangeState: (s: string) => void }) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
   const ref = useRef<HTMLDivElement>(null);
   const options = NEXT_STATES[state] ?? [];
 
   useEffect(() => {
     function close(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node) &&
+          btnRef.current && !btnRef.current.contains(e.target as Node)) setOpen(false);
     }
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
   }, []);
 
+  function toggle(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+    }
+    setOpen((o) => !o);
+  }
+
   return (
-    <div ref={ref} className="relative shrink-0">
-      <button
-        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
-        className="flex items-center gap-space-2xs group">
+    <div className="relative shrink-0">
+      <button ref={btnRef} onClick={toggle} className="flex items-center gap-space-2xs group">
         <Pill tone={stateTone(state)}>{state}</Pill>
         {options.length > 0 && (
           <Icon name="expand_more" className={`text-[14px] text-on-surface-variant transition-transform ${open ? 'rotate-180' : ''}`} />
         )}
       </button>
       {open && options.length > 0 && (
-        <div className="absolute right-0 top-full mt-1 z-30 bg-surface-container-lowest border border-surface-border rounded shadow-lg min-w-[180px] flex flex-col py-space-xs">
+        <div ref={ref}
+          style={{ position: 'fixed', top: pos.top, right: pos.right, zIndex: 9999 }}
+          className="bg-surface-container-lowest border border-surface-border rounded shadow-lg min-w-[180px] flex flex-col py-space-xs">
           <span className="px-space-md py-space-xs font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider">
             Change status to
           </span>
@@ -113,16 +123,7 @@ function ExpandedItem({ item, state, onBack, onChangeState }: {
           <InfoBlock label="Channel"         value={item.channel ?? '—'} />
         </div>
 
-        {item.verbatim_text && (
-          <div className="p-space-md bg-surface-container border border-surface-border rounded flex flex-col gap-space-xs">
-            <span className="font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider">
-              Requested from
-            </span>
-            <p className="font-body-compact text-body-compact text-on-surface italic">
-              "{item.verbatim_text}"
-            </p>
-          </div>
-        )}
+
       </Card>
     </div>
   );
@@ -181,7 +182,6 @@ export function Disclosure() {
     matched:   items.filter((i) => matchesFilter(effectiveState(i), 'matched')).length,
     requested: items.filter((i) => matchesFilter(effectiveState(i), 'requested')).length,
     partial:   items.filter((i) => matchesFilter(effectiveState(i), 'partial')).length,
-    satisfied: items.filter((i) => matchesFilter(effectiveState(i), 'satisfied')).length,
   };
 
   return (
@@ -237,9 +237,6 @@ export function Disclosure() {
                   <Pill tone={Number(m.outstanding_items) > 0 ? 'overdue' : 'satisfied'}>
                     {m.outstanding_items} open
                   </Pill>
-                  {Number(m.open_reviews) > 0 && (
-                    <Pill tone="awaiting">{m.open_reviews} to review</Pill>
-                  )}
                 </div>
                 <p className="font-body-compact text-body-compact text-on-surface-variant line-clamp-1 mt-space-xs">
                   {(m.charges ?? []).join(', ')}

@@ -45,15 +45,15 @@ export function Disclosure() {
           <span className="font-code-citation text-code-citation px-space-xs py-space-2xs bg-surface-container rounded text-on-surface border border-surface-border">
             {matter?.key_dates?.court_file ?? '—'}
           </span>
-          <span className="font-caption-meta text-caption-meta text-on-surface-variant">Crown contact: {matter?.crown_contact ?? '—'}</span>
+          <span className="font-caption-meta text-caption-meta text-on-surface-variant">Prosecutor: {matter?.crown_contact ?? '—'}</span>
         </div>
         {roll && (
           <div className="flex items-center gap-space-md">
             <Metric label="Items" value={roll.total_items} />
             <Metric label="Satisfied" value={roll.satisfied} tone="text-status-satisfied-fg" />
-            <Metric label="Partially received" value={roll.partially_received} tone="text-status-awaiting-fg" />
-            <Metric label="Follow-up recommended" value={roll.still_outstanding} tone="text-status-overdue-fg" />
-            <Metric label="Oldest outstanding" value={`${roll.oldest_outstanding_days}d`} tone="text-status-overdue-fg" />
+            <Metric label="Partially served" value={roll.partially_received} tone="text-status-awaiting-fg" />
+            <Metric label="Follow-up needed" value={roll.still_outstanding} tone="text-status-overdue-fg" />
+            <Metric label="Oldest gap" value={`${roll.oldest_outstanding_days}d`} tone="text-status-overdue-fg" />
           </div>
         )}
       </div>
@@ -90,10 +90,10 @@ export function Disclosure() {
 
         <section className="col-span-12 lg:col-span-9 flex flex-col">
           <div className="flex items-center gap-space-xs px-space-xl border-b border-surface-border bg-surface-container-lowest">
-            {([['register', 'Request register', 'checklist_rtl'],
-               ['reconcile', 'Reconciliation', 'rule'],
-               ['diff', 'Document diff', 'difference'],
-               ['evidence', 'Evidence index', 'account_tree']] as [Tab, string, string][]).map(([id, label, icon]) => (
+            {([['register', 'Outstanding requests', 'checklist_rtl'],
+               ['reconcile', 'Matched documents', 'rule'],
+               ['diff', 'Document differences', 'difference'],
+               ['evidence', 'Evidence list', 'account_tree']] as [Tab, string, string][]).map(([id, label, icon]) => (
               <button key={id} onClick={() => setTab(id)}
                 className={`px-space-sm py-space-md flex items-center gap-space-xs font-body-strong text-body-strong border-b-2 transition-colors ${
                   tab === id ? 'border-accent text-primary' : 'border-transparent text-on-surface-variant hover:text-on-surface'}`}>
@@ -106,7 +106,7 @@ export function Disclosure() {
           <div className="p-space-xl flex flex-col gap-space-xl">
             {tab === 'register' && register && (
               <div className="flex flex-col gap-space-md">
-                <SectionTitle icon="checklist_rtl">Request register</SectionTitle>
+                <SectionTitle icon="checklist_rtl">Outstanding requests</SectionTitle>
                 <div className="flex flex-col divide-y divide-surface-border border border-surface-border rounded overflow-hidden">
                   {register.items.map((it: any) => (
                     <button key={it.id} onClick={() => openEvidence(it.id)}
@@ -149,10 +149,10 @@ export function Disclosure() {
                             <span className="font-caption-meta text-caption-meta text-outline">{m.evidence?.evidence}</span>
                             <span className="flex flex-col gap-space-2xs pt-space-2xs border-t border-surface-border/60">
                               <span className="font-caption-meta text-caption-meta text-outline uppercase">Classification</span>
-                              <Origin model={m.classification_model} confidence={m.classification_confidence}
+                              <Origin confidence={m.classification_confidence}
                                       at={m.classification_recorded_at} approvedBy={null} />
                               <span className="font-caption-meta text-caption-meta text-outline uppercase">Match</span>
-                              <Origin model={m.match_model} confidence={m.confidence}
+                              <Origin confidence={m.confidence}
                                       at={m.match_recorded_at} approvedBy={m.approved_by} />
                             </span>
                           </span>
@@ -183,7 +183,7 @@ export function Disclosure() {
                           {f.description ?? 'Not classified with sufficient confidence — raised for lawyer review'}
                         </span>
                         {f.classification_confidence != null &&
-                          <Origin model={meta?.ai?.model} confidence={f.classification_confidence} approvedBy={null} />}
+                          <Origin confidence={f.classification_confidence} approvedBy={null} />}
                       </span>
                       <Pill tone="awaiting">Lawyer review required</Pill>
                     </Card>
@@ -235,7 +235,7 @@ export function Disclosure() {
 
             {tab === 'evidence' && (
               <div className="flex flex-col gap-space-md">
-                <SectionTitle icon="account_tree">Evidence index</SectionTitle>
+                <SectionTitle icon="account_tree">Evidence list</SectionTitle>
                 {!evidence && <Empty>Pick an item on the request register to see its whole history.</Empty>}
                 {evidence && <EvidenceIndex e={evidence} />}
               </div>

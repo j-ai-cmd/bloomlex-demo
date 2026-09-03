@@ -71,7 +71,7 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
           </div>
           <div className="flex items-center gap-space-xs px-space-md py-space-xs rounded bg-surface-container-low border border-surface-border">
             <Icon name="smart_toy" className="text-[14px] text-on-surface-variant" />
-            <span className="font-code-timestamp text-caption-meta text-on-surface-variant">FIXTURE — demo week Sep 1–5</span>
+            <span className="font-code-timestamp text-caption-meta text-on-surface-variant">Sample week · Sep 1–5</span>
           </div>
         </div>
 
@@ -137,7 +137,7 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
                       <span className="font-caption-meta text-caption-meta text-on-surface-variant">Channel: <b className="text-on-surface">{c.channel}</b></span>
                       <span className="font-caption-meta text-caption-meta text-on-surface-variant">Precision: <b className="text-on-surface">{c.time_precision}</b></span>
                       <span className="font-caption-meta text-caption-meta text-on-surface-variant">Confidence: <b className="text-on-surface">{c.confidence.toFixed(2)}</b></span>
-                      <span className="font-caption-meta text-caption-meta text-on-surface-variant">Model: <b className="text-on-surface">FIXTURE · demo-v1</b></span>
+                      <span className="font-caption-meta text-caption-meta text-on-surface-variant">Source: <b className="text-on-surface">Sample data</b></span>
                     </div>
                   </div>
                 )}

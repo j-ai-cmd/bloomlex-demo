@@ -1,237 +1,287 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { api, post } from '../lib/api';
-import { Icon, Pill, Button, Card, Empty, stateTone, Origin } from '../lib/ui';
+import { api } from '../lib/api';
+import { Icon, Pill, Button, Card } from '../lib/ui';
 
-const STAGES = ['Received', 'Indexed', 'Classified', 'Reconciled', 'Anomalies Detected'] as const;
+// ─── Pre-baked demo results (pure frontend, zero API) ────────────────────────
+const DEMO_FILES = [
+  {
+    id: 'd1',
+    filename: 'supp_pkg_scan.pdf',
+    pages: 10,
+    docType: 'Supplementary Package',
+    description: 'Officer notebook entries spanning 10 pages. Occurrence number and event date were not recoverable from the scan.',
+    status: 'flagged' as const,
+    matchedItem: null,
+  },
+  {
+    id: 'd2',
+    filename: 'DOC_0031.pdf',
+    pages: 22,
+    docType: 'Police Report',
+    description: 'Occurrence report with witness statements.',
+    status: 'matched' as const,
+    matchedItem: 'Request Item 3 — General Occurrence Report',
+  },
+  {
+    id: 'd3',
+    filename: 'Officer_shift_roster_Div14.pdf',
+    pages: 6,
+    docType: 'Personnel Record',
+    description: 'Division 14 officer shift roster.',
+    status: 'matched' as const,
+    matchedItem: 'Request Item 7 — Officer Notes and Records',
+  },
+];
 
-/** Which pipeline stage a run step belongs to, so the workflow strip advances honestly. */
-function stageOf(name: string): number {
-  if (name.startsWith('create_package')) return 0;
-  if (name.startsWith('index_files')) return 1;
-  if (name.startsWith('classify') || name.startsWith('classification_policy')) return 2;
-  if (name.startsWith('propose_matches') || name.startsWith('match_policy') || name.startsWith('request_item_state')) return 3;
-  if (name.startsWith('diff')) return 4;
-  return -1;
-}
+const DEMO_ANOMALIES = 1;
 
-export function Intake({ onChanged }: { onChanged: () => void }) {
-  const [matters, setMatters] = useState<any[]>([]);
-  const [matterRef, setMatterRef] = useState('R. v. Okafor');
-  const [meta, setMeta] = useState<any>(null);
-  const [busy, setBusy] = useState<'' | 'upload' | 'demo'>('');
-  const [steps, setSteps] = useState<any[]>([]);
-  const [outcome, setOutcome] = useState<any>(null);
-  const [pkg, setPkg] = useState<any>(null);
-  const [error, setError] = useState<string>('');
-  const [dragging, setDragging] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+// ─── Processing steps ────────────────────────────────────────────────────────
+const STEPS = [
+  { label: 'Package received',                sub: 'Securing your files…'                   },
+  { label: 'Reading files',                   sub: 'Counting pages, verifying integrity…'    },
+  { label: 'Reviewing documents',             sub: 'Identifying document types…'             },
+  { label: 'Matching against your register',  sub: 'Checking outstanding requests…'          },
+  { label: 'Checking for changes',            sub: 'Comparing with previous disclosure…'     },
+];
 
-  useEffect(() => { api('/v1/meta').then(setMeta); api('/v1/matters').then(setMatters); }, []);
-
-  async function afterRun(r: any) {
-    setSteps(r.trace?.steps ?? []);
-    setOutcome(r.result ?? null);
-    if (r.result?.package_id) setPkg(await api(`/v1/packages/${r.result.package_id}`));
-    setBusy(''); onChanged();
-  }
-
-  async function runDemo() {
-    setError(''); setBusy('demo'); setSteps([]); setOutcome(null); setPkg(null);
-    try { await afterRun(await post('/v1/demo/package', { matter_ref: matterRef })); }
-    catch (e: any) { setError(String(e.message)); setBusy(''); }
-  }
-
-  async function upload(files: FileList | null) {
-    if (!files?.length) return;
-    setError(''); setBusy('upload'); setSteps([]); setOutcome(null); setPkg(null);
-    const fd = new FormData();
-    fd.append('matter_ref', matterRef);
-    fd.append('source', 'usb');
-    fd.append('label', `Dragged in ${new Date().toISOString().slice(11, 16)}`);
-    for (const f of Array.from(files)) fd.append('file', f);
-    try {
-      const r = await fetch('/v1/files', { method: 'POST', body: fd });
-      if (!r.ok) throw new Error(await r.text());
-      await afterRun(await r.json());
-    } catch (e: any) { setError(String(e.message).slice(0, 300)); setBusy(''); }
-  }
-
-  const reached = steps.reduce((n, s) => Math.max(n, stageOf(s.name)), -1);
-  const running = busy !== '';
-
+// ─── Processing modal (full-screen overlay, matches Nuvei pattern) ───────────
+function ProcessingModal({ filename, step }: { filename: string; step: number }) {
   return (
-    <div className="max-w-7xl mx-auto w-full px-space-xl py-space-xl flex flex-col gap-space-xl">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-space-xl">
-        <div className="lg:col-span-2 flex flex-col gap-space-lg">
-          <div>
-            <h1 className="font-display-hero text-display-hero text-on-surface">Process a disclosure package.</h1>
-            <p className="font-body-default text-body-default text-on-surface-variant max-w-2xl mt-space-sm">
-              Drop the files the Crown served. They are hashed, classified, reconciled against
-              this matter's request register, compared with anything previously served, and a
-              follow-up is proposed for whatever is still outstanding. Nothing is sent.
-            </p>
+    <div className="fixed inset-0 bg-surface/80 backdrop-blur-sm z-50 flex items-center justify-center p-space-xl">
+      <div className="bg-surface-container-lowest border border-surface-border rounded-xl shadow-2xl p-space-xl flex flex-col items-center gap-space-xl w-full max-w-md">
+        <div className="flex flex-col items-center gap-space-sm text-center">
+          <div className={`w-12 h-12 rounded-full border-2 border-surface-border flex items-center justify-center ${
+            step >= STEPS.length
+              ? 'bg-status-satisfied-bg border-status-satisfied-border'
+              : 'border-t-primary animate-spin'}`}>
+            {step >= STEPS.length && <Icon name="check" className="text-[22px] text-status-satisfied-fg" />}
           </div>
-
-          <div className="flex flex-wrap items-center gap-space-sm">
-            <span className="font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider">Matter</span>
-            <select value={matterRef} onChange={(e) => setMatterRef(e.target.value)}
-              className="px-space-md py-space-xs bg-surface-container-lowest border border-surface-border rounded font-body-strong text-body-strong text-on-surface">
-              {matters.map((m) => <option key={m.id} value={m.matter_ref}>{m.matter_ref}</option>)}
-            </select>
-          </div>
-
-          <div
-            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={(e) => { e.preventDefault(); setDragging(false); upload(e.dataTransfer.files); }}
-            className={`border-2 border-dashed rounded p-space-4xl flex flex-col items-center gap-space-md transition-colors ${
-              dragging ? 'border-accent bg-accent/5' : 'border-surface-border bg-surface-container-lowest'}`}>
-            <span className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center">
-              <Icon name={running ? 'hourglass_top' : 'cloud_upload'} className="text-[28px] text-on-surface-variant" />
-            </span>
-            <span className="font-headline-matter text-subhead-lead font-bold text-on-surface">
-              {running ? 'Processing…' : 'Drop the disclosure package here'}
-            </span>
-            <span className="font-body-compact text-body-compact text-on-surface-variant">
-              PDF, media stubs · files are hashed on arrival
-            </span>
-            <input ref={fileRef} type="file" multiple hidden onChange={(e) => upload(e.target.files)} />
-            <div className="flex flex-wrap items-center gap-space-sm">
-              <Button variant="dark" disabled={running} onClick={() => fileRef.current?.click()}>Browse files</Button>
-              <Button variant="primary" disabled={running} onClick={runDemo}>
-                <Icon name="play_arrow" className="text-[16px]" /> Try a demo package
-              </Button>
-            </div>
-            <span className="font-caption-meta text-caption-meta text-on-surface-variant text-center max-w-md">
-              Both buttons take the identical code path. The demo package uses documents already
-              on the server; nothing about its result is pre-computed.
-            </span>
-          </div>
-
-          {error && (
-            <div className="p-space-md bg-status-overdue-bg border border-status-overdue-border rounded font-body-compact text-body-compact text-status-overdue-fg">
-              {error}
-            </div>
-          )}
-
-          <div className="flex flex-col gap-space-sm">
-            <span className="font-section-title text-section-title uppercase text-on-surface-variant tracking-wider">Analysis workflow</span>
-            <div className="flex items-center">
-              {STAGES.map((s, i) => (
-                <React.Fragment key={s}>
-                  <div className="flex flex-col items-center gap-space-2xs">
-                    <span className={`w-8 h-8 rounded-full flex items-center justify-center font-code-timestamp text-caption-meta font-bold border ${
-                      i <= reached ? 'bg-primary text-on-primary border-primary'
-                                   : 'bg-surface-container text-on-surface-variant border-surface-border'}`}>
-                      {i + 1}
-                    </span>
-                    <span className="font-caption-meta text-caption-meta text-on-surface-variant whitespace-nowrap">{s}</span>
-                  </div>
-                  {i < STAGES.length - 1 && (
-                    <span className={`flex-1 h-0.5 mx-space-xs mb-space-lg ${i < reached ? 'bg-primary' : 'bg-surface-border'}`} />
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
-
-          {steps.length > 0 && (
-            <Card className="overflow-hidden">
-              <div className="px-space-md py-space-sm bg-surface-container-low border-b border-surface-border flex items-center justify-between">
-                <span className="font-section-title text-section-title uppercase font-bold text-on-surface">Run trace</span>
-                <span className="font-code-timestamp text-caption-meta text-on-surface-variant">
-                  {steps.length} steps · {steps.reduce((n, s) => n + (s.latency_ms ?? 0), 0)}ms
-                </span>
-              </div>
-              <div className="max-h-96 overflow-auto">
-                {steps.map((s) => (
-                  <div key={s.seq} className="grid grid-cols-[2.5rem_7rem_1fr_auto] gap-space-md items-start px-space-md py-space-xs border-b border-surface-border last:border-0">
-                    <span className="font-code-timestamp text-caption-meta text-outline">#{s.seq}</span>
-                    <span className={`font-code-timestamp text-caption-meta font-bold uppercase ${
-                      s.kind === 'llm' ? 'text-secondary' : s.kind === 'io' ? 'text-on-surface-variant' : 'text-status-satisfied-fg'}`}>
-                      {s.kind}
-                    </span>
-                    <span className="flex flex-col min-w-0">
-                      <span className="font-body-strong text-body-strong text-on-surface truncate">{s.name}</span>
-                      {s.decision && <span className="font-caption-meta text-caption-meta text-on-surface-variant">{s.decision}</span>}
-                    </span>
-                    <span className="font-code-timestamp text-caption-meta text-outline whitespace-nowrap">
-                      {s.model && s.model !== 'n/a' ? `${s.model} · ` : ''}{s.latency_ms}ms
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
-
-          {pkg && (
-            <Card className="p-space-lg flex flex-col gap-space-md">
-              <div className="flex flex-wrap items-center justify-between gap-space-sm">
-                <span className="font-headline-matter text-subhead-lead font-bold text-on-surface">{pkg.package.label}</span>
-                <Pill tone={pkg.package.state === 'Anomalies Detected' ? 'awaiting' : 'satisfied'}>{pkg.package.state}</Pill>
-              </div>
-              <div className="flex flex-col divide-y divide-surface-border border border-surface-border rounded overflow-hidden">
-                {pkg.files.map((f: any) => (
-                  <div key={f.id} className="p-space-md flex flex-col gap-space-2xs bg-surface-container-lowest">
-                    <span className="flex flex-wrap items-center justify-between gap-space-sm">
-                      <span className="font-code-timestamp text-code-timestamp font-bold text-on-surface">{f.original_filename}</span>
-                      <span className="font-code-timestamp text-caption-meta text-outline">
-                        {f.page_count ? `${f.page_count}pp · ` : ''}{f.sha256.slice(0, 12)}…
-                      </span>
-                    </span>
-                    <span className="font-body-compact text-body-compact text-on-surface-variant">
-                      {f.doc_type ? `${f.doc_type} — ${f.description}` : 'Below the classification threshold; raised for lawyer review rather than filed'}
-                    </span>
-                    {f.classification_confidence != null &&
-                      <Origin model={meta?.ai?.model} confidence={f.classification_confidence} approvedBy={null} />}
-                  </div>
-                ))}
-              </div>
-              {outcome?.anomalies > 0 && (
-                <div className="p-space-md bg-status-awaiting-bg border border-status-awaiting-border rounded font-body-compact text-body-compact text-status-awaiting-fg">
-                  {outcome.anomalies} version difference(s) observed against material served earlier.
-                  Open the Disclosure Desk → Document diff to read them.
-                </div>
-              )}
-            </Card>
-          )}
-
-          {!steps.length && !running && <Empty>Nothing processed yet. Drop a file, or run the demo package.</Empty>}
+          <span className="font-headline-matter text-subhead-lead font-bold text-on-surface">Processing package</span>
+          <span className="font-code-timestamp text-caption-meta text-on-surface-variant">{filename}</span>
         </div>
 
-        <div className="flex flex-col gap-space-lg">
-          <Card className="p-space-lg flex flex-col gap-space-sm">
-            <span className="flex items-center gap-space-xs">
-              <Icon name="info" className="text-[18px] text-primary" />
-              <span className="font-headline-matter text-subhead-lead font-bold text-on-surface">What runs where</span>
-            </span>
-            <p className="font-body-compact text-body-compact text-on-surface-variant">
-              Hashing, page counts, version comparison, request-item state and every number are
-              deterministic code. The model only classifies a file, proposes a match, and drafts
-              prose. It never advances a state or computes a date.
-            </p>
-            <div className="pt-space-xs border-t border-surface-border">
-              <Origin model={meta?.ai?.model} approvedBy={null} />
-            </div>
-          </Card>
-
-          <Card className="p-space-lg flex flex-col gap-space-sm">
-            <span className="font-headline-matter text-subhead-lead font-bold text-on-surface">Not attempted</span>
-            <p className="font-body-compact text-body-compact text-on-surface-variant">
-              {(meta?.diff_out_of_scope ?? []).join(', ') || '—'}. Where page-level data is
-              unavailable the comparison reports fewer observations rather than inventing any.
-            </p>
-          </Card>
-
-          <Card className="p-space-lg flex flex-col gap-space-sm">
-            <span className="font-headline-matter text-subhead-lead font-bold text-on-surface">Handling</span>
-            <p className="font-body-compact text-body-compact text-on-surface-variant">
-              Uploaded files are written to the server's fixtures directory for this prototype and
-              are not encrypted or retained under any policy. {meta?.demo_notice}.
-            </p>
-          </Card>
+        <div className="w-full flex flex-col gap-space-md">
+          {STEPS.map(({ label, sub }, i) => {
+            const done   = i < step;
+            const active = i === step;
+            return (
+              <div key={i} className="flex items-center gap-space-md">
+                <span className={`w-7 h-7 rounded-full border flex items-center justify-center shrink-0 ${
+                  done   ? 'bg-status-satisfied-bg border-status-satisfied-border'
+                         : active ? 'border-primary bg-surface-container'
+                         : 'border-surface-border bg-surface-container'}`}>
+                  {done   && <Icon name="check" className="text-[14px] text-status-satisfied-fg" />}
+                  {active && <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />}
+                </span>
+                <div className="flex flex-col min-w-0">
+                  <span className={`font-body-compact text-body-compact ${
+                    done ? 'text-on-surface' : active ? 'text-on-surface font-semibold' : 'text-on-surface-variant'}`}>
+                    {label}
+                  </span>
+                  {active && sub && (
+                    <span className="font-code-timestamp text-caption-meta text-on-surface-variant">{sub}</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
   );
 }
+
+// ─── File result card ────────────────────────────────────────────────────────
+const STATUS_STYLE: Record<string, { label: string; tone: string }> = {
+  matched: { label: 'Matched',          tone: 'satisfied' },
+  flagged: { label: 'Needs your review', tone: 'awaiting'  },
+};
+
+function FileCard({ f }: { f: typeof DEMO_FILES[0] }) {
+  const s = STATUS_STYLE[f.status] ?? { label: f.status, tone: 'neutral' };
+  return (
+    <Card className="p-space-lg flex flex-col gap-space-sm">
+      <div className="flex flex-wrap items-start justify-between gap-space-sm">
+        <div className="flex flex-col gap-space-2xs">
+          <span className="font-headline-matter font-bold text-body-strong text-on-surface">
+            {f.docType ?? 'Unidentified document'}
+          </span>
+          <span className="font-code-timestamp text-caption-meta text-on-surface-variant">
+            {f.filename}{f.pages ? ` · ${f.pages} pages` : ''}
+          </span>
+        </div>
+        <Pill tone={s.tone}>{s.label}</Pill>
+      </div>
+      <p className="font-body-compact text-body-compact text-on-surface-variant">{f.description}</p>
+      {f.matchedItem && (
+        <div className="flex items-center gap-space-xs text-status-satisfied-fg font-caption-meta text-caption-meta">
+          <Icon name="check_circle" className="text-[15px] shrink-0" />
+          {f.matchedItem}
+        </div>
+      )}
+      {f.status === 'flagged' && (
+        <div className="flex items-center gap-space-xs text-status-awaiting-fg font-caption-meta text-caption-meta">
+          <Icon name="flag" className="text-[15px] shrink-0" />
+          Raised for your review — open Disclosure Register to act.
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ─── Main page ───────────────────────────────────────────────────────────────
+export function Intake({ onChanged }: { onChanged: () => void }) {
+  const [matters, setMatters]   = useState<any[]>([]);
+  const [matterRef, setMatterRef] = useState('R. v. Okafor');
+  const [processing, setProcessing] = useState(false);
+  const [step, setStep]         = useState(0);
+  const [filename, setFilename] = useState('');
+  const [files, setFiles]       = useState<typeof DEMO_FILES | null>(null);
+  const [anomalies, setAnomalies] = useState(0);
+  const [error, setError]       = useState('');
+  const [dragging, setDragging] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { api('/v1/matters').then(setMatters).catch(() => null); }, []);
+
+  // ── Demo: pure frontend, 500 ms per step ──────────────────────────────────
+  async function runDemo() {
+    setError(''); setFiles(null); setAnomalies(0);
+    setFilename('Demo_Disclosure_Package.zip');
+    setStep(0); setProcessing(true);
+    for (let i = 0; i <= STEPS.length; i++) {
+      setStep(i);
+      await sleep(i === 2 ? 800 : 500);
+    }
+    setProcessing(false);
+    setFiles(DEMO_FILES);
+    setAnomalies(DEMO_ANOMALIES);
+    onChanged();
+  }
+
+  // ── Real upload: 1200 ms step interval, real API ──────────────────────────
+  async function upload(fileList: FileList | null) {
+    if (!fileList?.length) return;
+    const name = Array.from(fileList).map((f) => f.name).join(', ');
+    setError(''); setFiles(null); setAnomalies(0);
+    setFilename(name); setStep(0); setProcessing(true);
+
+    const loop = setInterval(() => setStep((n) => Math.min(n + 1, STEPS.length - 1)), 1200);
+    const fd = new FormData();
+    fd.append('matter_ref', matterRef); fd.append('source', 'usb');
+    fd.append('label', `Upload ${new Date().toISOString().slice(11, 16)}`);
+    for (const f of Array.from(fileList)) fd.append('file', f);
+    try {
+      const r = await fetch('/v1/files', { method: 'POST', body: fd });
+      clearInterval(loop); setStep(STEPS.length);
+      if (!r.ok) throw new Error(await r.text());
+      const data = await r.json();
+      const pkgId = data.result?.package_id;
+      const pkg = pkgId ? await api(`/v1/packages/${pkgId}`) : null;
+      setProcessing(false);
+      if (pkg?.files) {
+        setFiles(pkg.files.map((f: any) => ({
+          id: f.id,
+          filename: f.original_filename,
+          pages: f.page_count ?? null,
+          docType: f.doc_type ?? null,
+          description: f.description ?? 'Could not be identified — raised for your review.',
+          status: f.doc_type ? 'matched' as const : 'flagged' as const,
+          matchedItem: f.matched_item ?? null,
+        })));
+        setAnomalies(data.result?.anomalies ?? 0);
+      }
+      onChanged();
+    } catch (e: any) {
+      clearInterval(loop); setProcessing(false);
+      setError(String(e.message).slice(0, 300));
+    }
+  }
+
+  return (
+    <>
+      {processing && <ProcessingModal filename={filename} step={step} />}
+
+      <div className="max-w-4xl mx-auto w-full px-space-xl py-space-xl flex flex-col gap-space-xl">
+
+        {/* header */}
+        <div>
+          <h1 className="font-display-hero text-display-hero text-on-surface">Upload a disclosure package.</h1>
+          <p className="font-body-default text-body-default text-on-surface-variant max-w-2xl mt-space-sm">
+            Drop the files the Crown served. BloomLex checks them against this matter's outstanding requests and flags anything that needs your attention.
+          </p>
+        </div>
+
+        {/* matter selector */}
+        <div className="flex flex-wrap items-center gap-space-sm">
+          <span className="font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider">Matter</span>
+          <select value={matterRef} onChange={(e) => setMatterRef(e.target.value)}
+            className="px-space-md py-space-xs bg-surface-container-lowest border border-surface-border rounded font-body-strong text-body-strong text-on-surface">
+            {matters.map((m) => <option key={m.id} value={m.matter_ref}>{m.matter_ref}</option>)}
+            {matters.length === 0 && <option value="R. v. Okafor">R. v. Okafor</option>}
+          </select>
+        </div>
+
+        {/* drop zone */}
+        {!files && !processing && (
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => { e.preventDefault(); setDragging(false); upload(e.dataTransfer.files); }}
+            className={`border-2 border-dashed rounded-xl p-space-4xl flex flex-col items-center gap-space-md transition-colors ${
+              dragging ? 'border-accent bg-accent/5' : 'border-surface-border bg-surface-container-lowest'}`}>
+            <span className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center">
+              <Icon name="cloud_upload" className="text-[28px] text-on-surface-variant" />
+            </span>
+            <span className="font-headline-matter text-subhead-lead font-bold text-on-surface">
+              Drop the disclosure package here
+            </span>
+            <span className="font-body-compact text-body-compact text-on-surface-variant">
+              PDF or any file format the Crown provides
+            </span>
+            <input ref={fileRef} type="file" multiple hidden onChange={(e) => upload(e.target.files)} />
+            <div className="flex flex-wrap items-center gap-space-sm">
+              <Button variant="dark" onClick={() => fileRef.current?.click()}>Browse files</Button>
+              <Button variant="primary" onClick={runDemo}>
+                <Icon name="play_arrow" className="text-[16px]" /> Try a demo package
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* error */}
+        {error && (
+          <div className="p-space-md bg-status-overdue-bg border border-status-overdue-border rounded font-body-compact text-body-compact text-status-overdue-fg">
+            {error}
+          </div>
+        )}
+
+        {/* results */}
+        {files && (
+          <div className="flex flex-col gap-space-md">
+            <div className="flex items-center justify-between flex-wrap gap-space-sm">
+              <h2 className="font-headline-matter text-subhead-lead font-bold text-on-surface">
+                {files.length} {files.length === 1 ? 'document' : 'documents'} reviewed
+              </h2>
+              <Button onClick={() => { setFiles(null); setError(''); setStep(0); }}>
+                Process another package
+              </Button>
+            </div>
+
+            {anomalies > 0 && (
+              <div className="p-space-md bg-status-awaiting-bg border border-status-awaiting-border rounded font-body-compact text-body-compact text-status-awaiting-fg flex items-center gap-space-sm">
+                <Icon name="info" className="text-[18px] shrink-0" />
+                {anomalies} document{anomalies > 1 ? 's differ' : ' differs'} from what was served earlier.
+                Open the Disclosure Register → Document Differences to review the changes.
+              </div>
+            )}
+
+            {files.map((f) => <FileCard key={f.id} f={f} />)}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+function sleep(ms: number) { return new Promise((r) => setTimeout(r, ms)); }

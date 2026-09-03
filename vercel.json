@@ -1,6 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "npm run fixtures && DATABASE_URL=pglite npm -w apps/api run build 2>/dev/null; npm -w apps/web run build",
+  "installCommand": "npm install",
+  "buildCommand": "npm -w @spine/web run build",
   "outputDirectory": "apps/web/dist",
   "rewrites": [
     { "source": "/v1/:path*", "destination": "/api" }

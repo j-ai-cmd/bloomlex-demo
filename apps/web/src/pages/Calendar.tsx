@@ -179,10 +179,6 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
             </div>
             <Button onClick={() => setDay(today)}>Today</Button>
           </div>
-          <div className="flex items-center gap-space-xs px-space-md py-space-xs rounded bg-surface-container-low border border-surface-border">
-            <Icon name="smart_toy" className="text-[14px] text-on-surface-variant" />
-            <span className="font-code-timestamp text-caption-meta text-on-surface-variant">Sample data · September 2026</span>
-          </div>
         </div>
 
         <div className="flex items-center gap-space-xs overflow-x-auto py-space-2xs">
@@ -255,10 +251,10 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
         </div>
 
         {/* sidebar — month at a glance */}
-        <div className="w-full lg:w-inspector-width bg-surface-container-low border-l border-surface-border p-space-lg flex flex-col gap-space-xl">
-          <div className="flex flex-col gap-space-sm">
+        <div className="w-full lg:w-inspector-width bg-surface-container-low border-l border-surface-border p-space-lg flex flex-col" style={{minHeight: 'calc(100vh - 14rem)'}}>
+          <div className="flex flex-col gap-space-sm flex-1 overflow-hidden">
             <span className="font-headline-matter font-bold text-xs uppercase tracking-wider text-on-surface">September 2026</span>
-            <div className="flex flex-col gap-space-xs max-h-[60vh] overflow-y-auto">
+            <div className="flex flex-col gap-space-xs flex-1 overflow-y-auto">
               {monthDays.map(({ date, count }) => {
                 const items = allForDay(date);
                 const hasCourtDeadline = items.some((i) => i.category === 'court');

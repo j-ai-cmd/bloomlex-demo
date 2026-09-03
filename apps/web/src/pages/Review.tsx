@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { api, post } from '../lib/api';
-import { Icon, Pill, Button, Card, Empty } from '../lib/ui';
+import { Icon, Button, Card, Empty } from '../lib/ui';
 
 const INTAKE_KEY = 'bloomlex_intake_state';
 
@@ -37,19 +37,26 @@ function loadIntakeFlagged(): IntakeFile[] {
 // ─── Matter dropdown for "Add to matter" ─────────────────────────────────────
 function AddToMatterButton({ onAdd }: { onAdd: (matterId: string, matterRef: string) => void }) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
   const [matters, setMatters] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const dropRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function close(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (dropRef.current && !dropRef.current.contains(e.target as Node) &&
+          btnRef.current && !btnRef.current.contains(e.target as Node)) setOpen(false);
     }
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
   }, []);
 
-  async function openDropdown() {
+  async function toggle() {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+    }
     setOpen((o) => !o);
     if (matters.length === 0) {
       setLoading(true);
@@ -61,13 +68,16 @@ function AddToMatterButton({ onAdd }: { onAdd: (matterId: string, matterRef: str
   }
 
   return (
-    <div ref={ref} className="relative">
-      <Button variant="primary" onClick={openDropdown}>
+    <>
+      <button ref={btnRef} onClick={toggle}
+        className="inline-flex items-center gap-space-xs px-space-md py-space-xs rounded border bg-primary text-on-primary border-primary font-body-compact text-body-compact hover:opacity-90 transition-opacity">
         <Icon name="add" className="text-[16px]" /> Add to matter
         <Icon name="expand_more" className={`text-[14px] transition-transform ${open ? 'rotate-180' : ''}`} />
-      </Button>
+      </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 z-30 bg-surface-container-lowest border border-surface-border rounded shadow-lg min-w-[200px] flex flex-col py-space-xs">
+        <div ref={dropRef}
+          style={{ position: 'fixed', top: pos.top, right: pos.right, zIndex: 9999 }}
+          className="bg-surface-container-lowest border border-surface-border rounded shadow-lg min-w-[200px] flex flex-col py-space-xs">
           {loading && (
             <span className="px-space-md py-space-sm font-body-compact text-body-compact text-on-surface-variant">Loading…</span>
           )}
@@ -82,7 +92,7 @@ function AddToMatterButton({ onAdd }: { onAdd: (matterId: string, matterRef: str
           ))}
         </div>
       )}
-    </div>
+    </>
   );
 }
 
@@ -147,53 +157,39 @@ export function Review({ onChanged }: { onChanged: () => void }) {
       {/* ── All pending items — flat list ── */}
       <div className="flex flex-col gap-space-md">
         {pendingIntake.map((f) => (
-          <Card key={f.id} className="overflow-hidden">
-            <div className="px-space-lg py-space-sm bg-status-awaiting-bg border-b border-status-awaiting-border flex flex-wrap items-center justify-between gap-space-xs">
-              <span className="flex items-center gap-space-sm">
-                <Icon name="flag" className="text-[18px] text-status-awaiting-fg" />
-                <span className="font-body-strong text-body-strong text-status-awaiting-fg">
-                  Could not be matched to a request
-                </span>
+          <Card key={f.id} className="p-space-lg flex flex-col gap-space-md">
+            <div className="flex flex-col gap-space-2xs">
+              <span className="font-headline-matter font-bold text-body-strong text-on-surface">
+                {f.docType ?? 'Unidentified document'}
               </span>
-              <Pill tone="awaiting">Needs your review</Pill>
+              <span className="font-code-timestamp text-caption-meta text-on-surface-variant">
+                {f.filename}{f.pages ? ` · ${f.pages} pages` : ''}
+              </span>
             </div>
-            <div className="p-space-lg flex flex-col gap-space-md">
-              <div className="flex flex-col gap-space-2xs">
-                <span className="font-headline-matter font-bold text-body-strong text-on-surface">
-                  {f.docType ?? 'Unidentified document'}
-                </span>
-                <span className="font-code-timestamp text-caption-meta text-on-surface-variant">
-                  {f.filename}{f.pages ? ` · ${f.pages} pages` : ''}
-                </span>
-              </div>
-              <p className="font-body-compact text-body-compact text-on-surface-variant">{f.description}</p>
-              <div className="flex flex-wrap items-center justify-between gap-space-md pt-space-xs border-t border-surface-border">
-                <span className="font-caption-meta text-caption-meta text-on-surface-variant">
-                  Decide what to do with this document.
-                </span>
-                <span className="flex items-center gap-space-sm">
-                  <Button onClick={() => dismissIntake(f.id)}>Set aside</Button>
-                  <AddToMatterButton onAdd={(mId, mRef) => addIntakeToMatter(f.id, mId, mRef)} />
-                </span>
-              </div>
+            <p className="font-body-compact text-body-compact text-on-surface-variant">{f.description}</p>
+            <div className="flex flex-wrap items-center justify-between gap-space-md pt-space-xs border-t border-surface-border">
+              <span className="font-caption-meta text-caption-meta text-on-surface-variant">
+                Could not be matched to a request — decide what to do.
+              </span>
+              <span className="flex items-center gap-space-sm">
+                <Button onClick={() => dismissIntake(f.id)}>Set aside</Button>
+                <AddToMatterButton onAdd={(mId, mRef) => addIntakeToMatter(f.id, mId, mRef)} />
+              </span>
             </div>
           </Card>
         ))}
 
         {pendingItems.map((r) => (
           <Card key={r.id} className="p-space-lg flex flex-col gap-space-md">
-            <div className="flex flex-wrap items-start justify-between gap-space-sm">
-              <div className="flex flex-col gap-space-2xs">
-                <span className="font-headline-matter font-bold text-body-strong text-on-surface">{r.title}</span>
-                {r.matter_ref && (
-                  <span className="font-code-timestamp text-caption-meta text-on-surface-variant">{r.matter_ref}</span>
-                )}
-              </div>
-              <Pill tone="awaiting">{kindLabel(r.kind)}</Pill>
+            <div className="flex flex-col gap-space-2xs">
+              <span className="font-headline-matter font-bold text-body-strong text-on-surface">{r.title}</span>
+              {r.matter_ref && (
+                <span className="font-code-timestamp text-caption-meta text-on-surface-variant">{r.matter_ref}</span>
+              )}
             </div>
             <div className="flex flex-wrap items-center justify-between gap-space-md pt-space-xs border-t border-surface-border">
               <span className="font-caption-meta text-caption-meta text-on-surface-variant">
-                Mark resolved once you have confirmed or corrected this item.
+                Needs your attention before this file moves forward.
               </span>
               <Button variant="primary" onClick={() => resolve(r.id)} disabled={busy === r.id}>
                 <Icon name="check" className="text-[16px]" />

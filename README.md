@@ -11,6 +11,35 @@ surfaces:
 - **Disclosure Desk** — the deep vertical. One niche workflow (Crown disclosure tracking for
   criminal defence) done properly.
 
+
+## Deploying to Vercel
+
+The repo is a monorepo. Vercel hosts both the frontend (static) and the API (serverless
+function) from one project, using `vercel.json` at the root.
+
+### Prerequisites
+
+A **Neon** (or any Postgres) database — free tier is fine. Copy the connection string:
+`postgres://user:pass@host/dbname`. Do not set `DATABASE_URL` to a PGlite path; PGlite
+is in-process and its state is lost between invocations.
+
+### Environment variables (Vercel → Project → Settings → Environment Variables)
+
+| Variable | Value |
+|---|---|
+| `DATABASE_URL` | Your Neon / Postgres connection string |
+| `KIMI_API_KEY` | Your Kimi key |
+| `KIMI_BASE_URL` | `https://api.moonshot.ai/v1` |
+| `KIMI_MODEL` | `kimi-k2.6` |
+
+### How it works
+
+- `/v1/*` routes to `api/index.ts` (a 60s Vercel serverless function).
+- `apps/web/dist/` is served as static files; Vite builds it during deploy.
+- On the **first request after deploy**, the function detects an empty database, runs the
+  schema migration, and seeds the demo data automatically (~3–5s, once only).
+- The frontend uses relative `/v1` URLs, so no `NEXT_PUBLIC_API_URL` is needed.
+
 ## There is no BloomLex integration
 
 There is no public BloomLex API, webhook or developer documentation. The event contract in

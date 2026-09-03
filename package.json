@@ -1,7 +1,9 @@
 {
   "name": "spine",
   "private": true,
-  "workspaces": ["apps/*"],
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "dev": "npm -w apps/api run dev",
     "migrate": "npm -w apps/api run migrate",
@@ -9,5 +11,8 @@
     "test": "npm -w apps/api run test",
     "fixtures": "npm -w apps/api run fixtures",
     "reset": "npm run migrate && npm run fixtures && npm run seed"
+  },
+  "devDependencies": {
+    "@vercel/node": "^12.0.0"
   }
 }

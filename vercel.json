@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "buildCommand": "npm run fixtures && DATABASE_URL=pglite npm -w apps/api run build 2>/dev/null; npm -w apps/web run build",
+  "outputDirectory": "apps/web/dist",
+  "rewrites": [
+    { "source": "/v1/:path*", "destination": "/api" }
+  ],
+  "functions": {
+    "api/index.ts": {
+      "maxDuration": 60
+    }
+  }
+}

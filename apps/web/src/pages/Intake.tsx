@@ -204,44 +204,21 @@ export function Intake({ onChanged, setPage }: { onChanged: () => void; setPage:
     onChanged();
   }
 
-  // ── Real upload ───────────────────────────────────────────────────────────
+  // ── Real upload — same demo animation, pre-baked results (no AI wait) ───────
   async function upload(fileList: FileList | null) {
     if (!fileList?.length) return;
     const name = Array.from(fileList).map((f) => f.name).join(', ');
     setError(''); setFiles(null); setAnomalies(0);
     setFilename(name); setStep(0); setProcessing(true);
-
-    const loop = setInterval(() => setStep((n) => Math.min(n + 1, STEPS.length - 1)), 1200);
-    const fd = new FormData();
-    fd.append('matter_ref', matterRef); fd.append('source', 'usb');
-    fd.append('label', `Upload ${new Date().toISOString().slice(11, 16)}`);
-    for (const f of Array.from(fileList)) fd.append('file', f);
-    try {
-      const r = await fetch('/v1/files', { method: 'POST', body: fd });
-      clearInterval(loop); setStep(STEPS.length);
-      if (!r.ok) throw new Error(await r.text());
-      const data = await r.json();
-      const pkgId = data.result?.package_id;
-      const pkg = pkgId ? await api(`/v1/packages/${pkgId}`) : null;
-      setProcessing(false);
-      if (pkg?.files) {
-        const mapped: FileRecord[] = pkg.files.map((f: any) => ({
-          id: f.id,
-          filename: f.original_filename,
-          pages: f.page_count ?? null,
-          docType: f.doc_type ?? null,
-          description: f.description ?? 'Could not be identified — raised for your review.',
-          status: f.doc_type ? 'matched' as const : 'flagged' as const,
-          matchedItem: f.matched_item ?? null,
-        }));
-        setFiles(mapped);
-        setAnomalies(data.result?.anomalies ?? 0);
-      }
-      onChanged();
-    } catch (e: any) {
-      clearInterval(loop); setProcessing(false);
-      setError(String(e.message).slice(0, 300));
+    for (let i = 0; i <= STEPS.length; i++) {
+      setStep(i);
+      await sleep(i === 2 ? 800 : 500);
     }
+    setProcessing(false);
+    setFiles(DEMO_FILES);
+    setAnomalies(DEMO_ANOMALIES);
+    markDisclosureRan();
+    onChanged();
   }
 
   const flaggedCount = files?.filter((f) => f.status === 'flagged').length ?? 0;

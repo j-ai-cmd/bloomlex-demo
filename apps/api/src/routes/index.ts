@@ -275,7 +275,7 @@ export default async function routes(app: FastifyInstance) {
    * disclosure.package.received event handler a portal delivery would use — no side door.
    */
   app.post('/v1/files', async (req: any, reply) => {
-    const dir = fileURLToPath(new URL('../../../../fixtures/uploads/', import.meta.url));
+    const dir = '/tmp/bloomlex-uploads/';
     await mkdir(dir, { recursive: true });
     let matterRef: string | undefined;
     let source = 'usb';

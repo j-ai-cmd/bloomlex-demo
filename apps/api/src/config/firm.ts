@@ -1,5 +1,5 @@
 export const TZ = 'America/Toronto';
-export const FIRM_NAME = 'Vance Criminal Defence';
+export const FIRM_NAME = "D'Addario Criminal Defence";
 export const DEMO_NOTICE = 'Demo data — no real client information';
 /** Business days before a commitment's due date at which write-back proposes an action. */
 export const COMMITMENT_LOOKAHEAD_BUSINESS_DAYS = 2;

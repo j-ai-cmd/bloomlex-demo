@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { Icon, Pill, Button, Card } from '../lib/ui';
 import { markDisclosureRan } from './Calendar';
+import type { Page } from '../components/Shell';
 
 // ─── Pre-baked demo results (pure frontend, zero API) ────────────────────────
 const DEMO_FILES = [
@@ -45,7 +46,9 @@ const STEPS = [
   { label: 'Checking for changes',            sub: 'Comparing with previous disclosure…'     },
 ];
 
-// ─── Processing modal (full-screen overlay, matches Nuvei pattern) ───────────
+const INTAKE_KEY = 'bloomlex_intake_state';
+
+// ─── Processing modal ─────────────────────────────────────────────────────────
 function ProcessingModal({ filename, step }: { filename: string; step: number }) {
   return (
     <div className="fixed inset-0 bg-surface/80 backdrop-blur-sm z-50 flex items-center justify-center p-space-xl">
@@ -92,16 +95,17 @@ function ProcessingModal({ filename, step }: { filename: string; step: number })
   );
 }
 
-// ─── File result card ────────────────────────────────────────────────────────
+// ─── File result card ─────────────────────────────────────────────────────────
 const STATUS_STYLE: Record<string, { label: string; tone: string }> = {
   matched: { label: 'Matched',          tone: 'satisfied' },
   flagged: { label: 'Needs your review', tone: 'awaiting'  },
 };
 
-function FileCard({ f }: { f: typeof DEMO_FILES[0] }) {
+function FileCard({ f, onReview }: { f: typeof DEMO_FILES[0]; onReview?: () => void }) {
   const s = STATUS_STYLE[f.status] ?? { label: f.status, tone: 'neutral' };
   return (
-    <Card className="p-space-lg flex flex-col gap-space-sm">
+    <Card className={`p-space-lg flex flex-col gap-space-sm ${f.status === 'flagged' && onReview ? 'cursor-pointer hover:border-accent transition-colors' : ''}`}
+      onClick={f.status === 'flagged' && onReview ? onReview : undefined}>
       <div className="flex flex-wrap items-start justify-between gap-space-sm">
         <div className="flex flex-col gap-space-2xs">
           <span className="font-headline-matter font-bold text-body-strong text-on-surface">
@@ -123,27 +127,66 @@ function FileCard({ f }: { f: typeof DEMO_FILES[0] }) {
       {f.status === 'flagged' && (
         <div className="flex items-center gap-space-xs text-status-awaiting-fg font-caption-meta text-caption-meta">
           <Icon name="flag" className="text-[15px] shrink-0" />
-          Raised for your review — open Disclosure Register to act.
+          {onReview ? 'Click to review this document →' : 'Open Pending Review to act on this.'}
         </div>
       )}
     </Card>
   );
 }
 
-// ─── Main page ───────────────────────────────────────────────────────────────
-export function Intake({ onChanged }: { onChanged: () => void }) {
+// ─── Main page ────────────────────────────────────────────────────────────────
+type FileRecord = typeof DEMO_FILES[0];
+
+function loadSession(matter: string): { files: FileRecord[] | null; anomalies: number } | null {
+  try {
+    const raw = sessionStorage.getItem(INTAKE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed.matterRef !== matter) return null;
+    return { files: parsed.files, anomalies: parsed.anomalies };
+  } catch { return null; }
+}
+
+function saveSession(matter: string, files: FileRecord[] | null, anomalies: number) {
+  try {
+    if (files) {
+      sessionStorage.setItem(INTAKE_KEY, JSON.stringify({ matterRef: matter, files, anomalies }));
+    } else {
+      sessionStorage.removeItem(INTAKE_KEY);
+    }
+  } catch {}
+}
+
+export function Intake({ onChanged, setPage }: { onChanged: () => void; setPage: (p: Page) => void }) {
   const [matters, setMatters]   = useState<any[]>([]);
   const [matterRef, setMatterRef] = useState('R. v. Okafor');
   const [processing, setProcessing] = useState(false);
   const [step, setStep]         = useState(0);
   const [filename, setFilename] = useState('');
-  const [files, setFiles]       = useState<typeof DEMO_FILES | null>(null);
+  const [files, setFiles]       = useState<FileRecord[] | null>(null);
   const [anomalies, setAnomalies] = useState(0);
   const [error, setError]       = useState('');
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Restore saved state on mount
+  useEffect(() => {
+    const saved = loadSession(matterRef);
+    if (saved) { setFiles(saved.files); setAnomalies(saved.anomalies); }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => { api('/v1/matters').then(setMatters).catch(() => null); }, []);
+
+  // Persist analysis to sessionStorage whenever it changes
+  useEffect(() => { saveSession(matterRef, files, anomalies); }, [files, anomalies, matterRef]);
+
+  function handleMatterChange(newMatter: string) {
+    setMatterRef(newMatter);
+    setFiles(null);
+    setAnomalies(0);
+    setError('');
+    saveSession(newMatter, null, 0);
+  }
 
   // ── Demo: pure frontend, 500 ms per step ──────────────────────────────────
   async function runDemo() {
@@ -157,11 +200,11 @@ export function Intake({ onChanged }: { onChanged: () => void }) {
     setProcessing(false);
     setFiles(DEMO_FILES);
     setAnomalies(DEMO_ANOMALIES);
-    markDisclosureRan(); // surfaces 3 follow-up items on the Calendar for this week
+    markDisclosureRan();
     onChanged();
   }
 
-  // ── Real upload: 1200 ms step interval, real API ──────────────────────────
+  // ── Real upload ───────────────────────────────────────────────────────────
   async function upload(fileList: FileList | null) {
     if (!fileList?.length) return;
     const name = Array.from(fileList).map((f) => f.name).join(', ');
@@ -182,7 +225,7 @@ export function Intake({ onChanged }: { onChanged: () => void }) {
       const pkg = pkgId ? await api(`/v1/packages/${pkgId}`) : null;
       setProcessing(false);
       if (pkg?.files) {
-        setFiles(pkg.files.map((f: any) => ({
+        const mapped: FileRecord[] = pkg.files.map((f: any) => ({
           id: f.id,
           filename: f.original_filename,
           pages: f.page_count ?? null,
@@ -190,7 +233,8 @@ export function Intake({ onChanged }: { onChanged: () => void }) {
           description: f.description ?? 'Could not be identified — raised for your review.',
           status: f.doc_type ? 'matched' as const : 'flagged' as const,
           matchedItem: f.matched_item ?? null,
-        })));
+        }));
+        setFiles(mapped);
         setAnomalies(data.result?.anomalies ?? 0);
       }
       onChanged();
@@ -199,6 +243,8 @@ export function Intake({ onChanged }: { onChanged: () => void }) {
       setError(String(e.message).slice(0, 300));
     }
   }
+
+  const flaggedCount = files?.filter((f) => f.status === 'flagged').length ?? 0;
 
   return (
     <>
@@ -217,7 +263,7 @@ export function Intake({ onChanged }: { onChanged: () => void }) {
         {/* matter selector */}
         <div className="flex flex-wrap items-center gap-space-sm">
           <span className="font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider">Matter</span>
-          <select value={matterRef} onChange={(e) => setMatterRef(e.target.value)}
+          <select value={matterRef} onChange={(e) => handleMatterChange(e.target.value)}
             className="px-space-md py-space-xs bg-surface-container-lowest border border-surface-border rounded font-body-strong text-body-strong text-on-surface">
             {matters.map((m) => <option key={m.id} value={m.matter_ref}>{m.matter_ref}</option>)}
             {matters.length === 0 && <option value="R. v. Okafor">R. v. Okafor</option>}
@@ -279,11 +325,25 @@ export function Intake({ onChanged }: { onChanged: () => void }) {
               <div className="p-space-md bg-status-awaiting-bg border border-status-awaiting-border rounded font-body-compact text-body-compact text-status-awaiting-fg flex items-center gap-space-sm">
                 <Icon name="info" className="text-[18px] shrink-0" />
                 {anomalies} document{anomalies > 1 ? 's differ' : ' differs'} from what was served earlier.
-                Open the Disclosure Register → Document Differences to review the changes.
+                Open Disclosure Register → Document Differences to review the changes.
               </div>
             )}
 
-            {files.map((f) => <FileCard key={f.id} f={f} />)}
+            {flaggedCount > 0 && (
+              <div
+                className="p-space-md bg-status-awaiting-bg/60 border border-status-awaiting-border rounded font-body-compact text-body-compact text-status-awaiting-fg flex items-center justify-between gap-space-sm cursor-pointer hover:bg-status-awaiting-bg transition-colors"
+                onClick={() => setPage('review')}>
+                <span className="flex items-center gap-space-sm">
+                  <Icon name="flag" className="text-[18px] shrink-0" />
+                  {flaggedCount} document{flaggedCount > 1 ? 's need' : ' needs'} your review — click to open Pending Review
+                </span>
+                <Icon name="arrow_forward" className="text-[18px] shrink-0" />
+              </div>
+            )}
+
+            {files.map((f) => (
+              <FileCard key={f.id} f={f} onReview={f.status === 'flagged' ? () => setPage('review') : undefined} />
+            ))}
           </div>
         )}
       </div>

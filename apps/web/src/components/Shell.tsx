@@ -8,10 +8,6 @@ export function Shell({ page, setPage, meta, counts, children }: {
   page: Page; setPage: (p: Page) => void; meta: any;
   counts: { disclosure: number; review: number }; children: React.ReactNode;
 }) {
-  const now = new Date();
-  const stamp = now.toLocaleDateString('en-CA', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase()
-    + ' · ' + now.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', hour12: false });
-
   const Item = ({ id, icon, label, badge, badgeTone }: any) => {
     const active = page === id;
     return (
@@ -23,7 +19,7 @@ export function Shell({ page, setPage, meta, counts, children }: {
           <Icon name={icon} className="text-[18px]" />
           <span className="font-body-compact text-body-compact">{label}</span>
         </span>
-        {badge != null && (
+        {badge != null && badge !== 0 && (
           <span className={`px-space-xs py-space-2xs rounded font-code-timestamp text-caption-meta font-bold ${badgeTone}`}>{badge}</span>
         )}
       </button>
@@ -37,19 +33,17 @@ export function Shell({ page, setPage, meta, counts, children }: {
           <div className="p-space-lg flex flex-col gap-space-sm border-b border-surface-border/60">
             <Logo />
             <span className="font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider">
-              {meta?.firm ?? '—'} · Criminal
+              {meta?.firm ?? '—'}
             </span>
           </div>
           <div className="px-space-lg py-space-xs">
             <nav className="flex flex-col gap-space-2xs pt-space-xs">
-              <Item id="calendar" icon="calendar_today" label="Deadlines" badge="Today"
-                    badgeTone="bg-surface-container text-on-surface-variant" />
-              <Item id="intake" icon="cloud_upload" label="Upload Disclosure" badge="Live"
-                    badgeTone="bg-surface-container text-on-surface-variant" />
-              <Item id="disclosure" icon="security" label="Disclosure Register" badge={counts.disclosure}
-                    badgeTone="bg-secondary-fixed text-on-secondary-fixed" />
-              <Item id="review" icon="fact_check" label="Pending Review" badge={counts.review}
-                    badgeTone="bg-accent text-accent-ink" />
+              <Item id="calendar"    icon="calendar_today" label="Deadlines" />
+              <Item id="intake"      icon="cloud_upload"   label="Upload Disclosure" />
+              <Item id="disclosure"  icon="security"       label="Disclosure Register"
+                    badge={counts.disclosure || null} badgeTone="bg-secondary-fixed text-on-secondary-fixed" />
+              <Item id="review"      icon="fact_check"     label="Pending Review"
+                    badge={counts.review || null} badgeTone="bg-accent text-accent-ink" />
             </nav>
           </div>
         </div>
@@ -59,30 +53,15 @@ export function Shell({ page, setPage, meta, counts, children }: {
               <Icon name="person" className="text-[18px]" />
             </span>
             <span className="flex flex-col truncate">
-              <span className="font-body-strong text-body-strong truncate text-on-surface">Marcus Vance</span>
-              <span className="font-caption-meta text-caption-meta text-on-surface-variant truncate">Senior Counsel</span>
+              <span className="font-body-strong text-body-strong truncate text-on-surface">Silvio D'Addario</span>
+              <span className="font-caption-meta text-caption-meta text-on-surface-variant truncate">Principal</span>
             </span>
           </div>
         </div>
       </aside>
 
       <div className="pl-sidebar-width">
-        <header className="fixed top-0 left-sidebar-width right-0 h-16 bg-surface/95 backdrop-blur-xl z-40 flex items-center justify-between px-space-xl border-b border-surface-border">
-          <div className="flex items-center gap-space-xs">
-            <span className="font-caption-meta text-caption-meta uppercase tracking-widest text-on-surface-variant font-semibold">BloomLex</span>
-            <span className="text-outline text-[10px]">/</span>
-            <span className="font-code-timestamp text-caption-meta text-on-surface">{stamp} · {meta?.timezone ?? ''}</span>
-          </div>
-          <div className="flex items-center gap-space-lg">
-            <span className="flex items-center gap-space-xs px-space-md py-space-xs bg-surface-container-low border border-surface-border rounded">
-              <Icon name="security" className="text-[14px] text-on-surface-variant" />
-              <span className="font-code-timestamp text-caption-meta text-on-surface-variant uppercase">
-                Demo
-              </span>
-            </span>
-          </div>
-        </header>
-        <main className="relative pt-16 bg-surface min-h-screen">{children}</main>
+        <main className="bg-surface min-h-screen">{children}</main>
       </div>
     </>
   );

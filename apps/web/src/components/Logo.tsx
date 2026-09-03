@@ -25,9 +25,6 @@ export function Logo() {
             bloom<span className="text-accent">lex</span><span className="text-accent">.</span>
           </span>
         )}
-      <span className="font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider">
-        Spine · Legal Operations
-      </span>
     </div>
   );
 }

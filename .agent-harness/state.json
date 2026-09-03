@@ -1,0 +1,257 @@
+{
+  "schema": "agent-harness/state.v1",
+  "goal": "Build and verify the Spine backend (TS/Fastify/Postgres) and wire the four Stitch screens into React/Vite, closing every loop with machine-run checks.",
+  "domain": "engineering",
+  "plan_file": ".agent-harness/plan.json",
+  "created_at": "2026-09-03T11:42:43Z",
+  "iteration": 12,
+  "max_loop_iterations": 12,
+  "status": "closed",
+  "tasks": [
+    {
+      "id": "T1",
+      "skill": null,
+      "objective": null,
+      "verification": [
+        {
+          "name": "test-suite",
+          "cmd": "npm test"
+        }
+      ],
+      "max_attempts": 3,
+      "attempts": 0,
+      "status": "verified",
+      "evidence": [
+        {
+          "at": "2026-09-03T11:42:43Z",
+          "phase": "execute",
+          "exit_code": 0,
+          "attempt": 1
+        },
+        {
+          "at": "2026-09-03T11:42:55Z",
+          "phase": "verify-run",
+          "checks": [
+            {
+              "cmd": "npm test",
+              "exit": 0,
+              "passed": true,
+              "tail": [
+                "# skipped 0",
+                "# todo 0",
+                "# duration_ms 11460.834167"
+              ]
+            }
+          ],
+          "attempt": 1
+        }
+      ]
+    },
+    {
+      "id": "T2",
+      "skill": null,
+      "objective": null,
+      "verification": [
+        {
+          "name": "boundary",
+          "cmd": "npx tsx --test apps/api/src/tests/boundary.test.ts"
+        }
+      ],
+      "max_attempts": 3,
+      "attempts": 0,
+      "status": "verified",
+      "evidence": [
+        {
+          "at": "2026-09-03T11:42:55Z",
+          "phase": "execute",
+          "exit_code": 0,
+          "attempt": 1
+        },
+        {
+          "at": "2026-09-03T11:42:55Z",
+          "phase": "verify-run",
+          "checks": [
+            {
+              "cmd": "npx tsx --test apps/api/src/tests/boundary.test.ts",
+              "exit": 0,
+              "passed": true,
+              "tail": [
+                "# skipped 0",
+                "# todo 0",
+                "# duration_ms 121.133125"
+              ]
+            }
+          ],
+          "attempt": 1
+        }
+      ]
+    },
+    {
+      "id": "T3",
+      "skill": null,
+      "objective": null,
+      "verification": [
+        {
+          "name": "generated-text",
+          "cmd": "npx tsx --test apps/api/src/tests/language.test.ts"
+        },
+        {
+          "name": "ui-copy",
+          "cmd": "node scripts/check-ui-language.mjs"
+        }
+      ],
+      "max_attempts": 3,
+      "attempts": 0,
+      "status": "verified",
+      "evidence": [
+        {
+          "at": "2026-09-03T11:42:55Z",
+          "phase": "execute",
+          "exit_code": 0,
+          "attempt": 1
+        },
+        {
+          "at": "2026-09-03T11:42:56Z",
+          "phase": "verify-run",
+          "checks": [
+            {
+              "cmd": "npx tsx --test apps/api/src/tests/language.test.ts",
+              "exit": 0,
+              "passed": true,
+              "tail": [
+                "# skipped 0",
+                "# todo 0",
+                "# duration_ms 118.663791"
+              ]
+            },
+            {
+              "cmd": "node scripts/check-ui-language.mjs",
+              "exit": 0,
+              "passed": true,
+              "tail": [
+                "UI language rule: 10 files clean"
+              ]
+            }
+          ],
+          "attempt": 1
+        }
+      ]
+    },
+    {
+      "id": "T4",
+      "skill": null,
+      "objective": null,
+      "verification": [
+        {
+          "name": "clean-reset",
+          "cmd": "rm -rf .pgdata-verify && DATABASE_URL=pglite:./.pgdata-verify npx tsx apps/api/src/scripts/seed.ts"
+        }
+      ],
+      "max_attempts": 3,
+      "attempts": 0,
+      "status": "verified",
+      "evidence": [
+        {
+          "at": "2026-09-03T11:42:56Z",
+          "phase": "execute",
+          "exit_code": 0,
+          "attempt": 1
+        },
+        {
+          "at": "2026-09-03T11:42:58Z",
+          "phase": "verify-run",
+          "checks": [
+            {
+              "cmd": "rm -rf .pgdata-verify && DATABASE_URL=pglite:./.pgdata-verify npx tsx apps/api/src/scripts/seed.ts",
+              "exit": 0,
+              "passed": true,
+              "tail": [
+                "  runs: 33,",
+                "  sweep_created: 33",
+                "}"
+              ]
+            }
+          ],
+          "attempt": 1
+        }
+      ]
+    },
+    {
+      "id": "T5",
+      "skill": null,
+      "objective": null,
+      "verification": [
+        {
+          "name": "web-build",
+          "cmd": "npm -w apps/web run build"
+        }
+      ],
+      "max_attempts": 3,
+      "attempts": 0,
+      "status": "verified",
+      "evidence": [
+        {
+          "at": "2026-09-03T11:42:58Z",
+          "phase": "execute",
+          "exit_code": 0,
+          "attempt": 1
+        },
+        {
+          "at": "2026-09-03T11:42:58Z",
+          "phase": "verify-run",
+          "checks": [
+            {
+              "cmd": "npm -w apps/web run build",
+              "exit": 0,
+              "passed": true,
+              "tail": [
+                "dist/assets/index-DMw00ch6.css   20.42 kB \u2502 gzip:  4.60 kB",
+                "dist/assets/index-BjLPhK5d.js   195.77 kB \u2502 gzip: 57.24 kB",
+                "\u2713 built in 539ms"
+              ]
+            }
+          ],
+          "attempt": 1
+        }
+      ]
+    },
+    {
+      "id": "T6",
+      "skill": null,
+      "objective": null,
+      "verification": [
+        {
+          "name": "api-smoke",
+          "cmd": "node scripts/smoke.mjs"
+        }
+      ],
+      "max_attempts": 3,
+      "attempts": 0,
+      "status": "verified",
+      "evidence": [
+        {
+          "at": "2026-09-03T11:42:58Z",
+          "phase": "execute",
+          "exit_code": 0,
+          "attempt": 1
+        },
+        {
+          "at": "2026-09-03T11:43:02Z",
+          "phase": "verify-run",
+          "checks": [
+            {
+              "cmd": "node scripts/smoke.mjs",
+              "exit": 0,
+              "passed": true,
+              "tail": [
+                "API smoke: all checks passed"
+              ]
+            }
+          ],
+          "attempt": 1
+        }
+      ]
+    }
+  ],
+  "closed_at": "2026-09-03T11:43:02Z"
+}

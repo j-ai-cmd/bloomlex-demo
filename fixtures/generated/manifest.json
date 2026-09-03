@@ -1,0 +1,300 @@
+{
+  "okafor_notebook_v1": {
+    "filename": "SCAN_0091.pdf",
+    "mime": "application/pdf",
+    "sidecar": {
+      "pages": [
+        {
+          "page": 1,
+          "text": "02:02 Dispatched to reported vehicle stop, eastbound arterial. Unit 1421 acknowledged.",
+          "redactions": []
+        },
+        {
+          "page": 2,
+          "text": "02:10 Vehicle stopped. White sedan, two occupants. Plate recorded in CAD.",
+          "redactions": []
+        },
+        {
+          "page": 3,
+          "text": "02:14 Driver produced licence. Identification recorded. Passenger remained seated.",
+          "redactions": []
+        },
+        {
+          "page": 4,
+          "text": "02:18 Roadside screening device serial TPS-409 retrieved from cruiser locker. Pre-shift test log consulted.",
+          "redactions": []
+        },
+        {
+          "page": 5,
+          "text": "02:25 Screening demand read from card. Sample provided at 02:27.",
+          "redactions": []
+        },
+        {
+          "page": 6,
+          "text": "02:31 Radioed dispatch for secondary unit. Rear cargo area observed from exterior.",
+          "redactions": []
+        },
+        {
+          "page": 7,
+          "text": "02:40 Transport commenced to 52 Division. Odometer recorded.",
+          "redactions": []
+        },
+        {
+          "page": 8,
+          "text": "03:10 Arrival at booking counter. Property inventory commenced with booking officer.",
+          "redactions": []
+        },
+        {
+          "page": 9,
+          "text": "03:22 Rights to counsel read a second time at booking. Response recorded.",
+          "redactions": []
+        },
+        {
+          "page": 10,
+          "text": "03:40 Breath technician attended. Instrument identified by serial number.",
+          "redactions": []
+        },
+        {
+          "page": 11,
+          "text": "04:05 Samples completed. Certificate printed and attached to file.",
+          "redactions": []
+        },
+        {
+          "page": 12,
+          "text": "04:30 Subject released on undertaking. Copy of documents provided.",
+          "redactions": []
+        }
+      ]
+    }
+  },
+  "okafor_notebook_v2": {
+    "filename": "Discl_pkg3_FINAL_v2.pdf",
+    "mime": "application/pdf",
+    "sidecar": {
+      "pages": [
+        {
+          "page": 1,
+          "text": "02:02 Dispatched to reported vehicle stop, eastbound arterial. Unit 1421 acknowledged.",
+          "redactions": []
+        },
+        {
+          "page": 2,
+          "text": "02:10 Vehicle stopped. White sedan, two occupants. Plate recorded in CAD.",
+          "redactions": []
+        },
+        {
+          "page": 3,
+          "text": "02:14 Driver produced licence. Identification recorded. Passenger remained seated.",
+          "redactions": []
+        },
+        {
+          "page": 4,
+          "text": "02:25 Screening demand read from card. Sample provided at 02:27.",
+          "redactions": []
+        },
+        {
+          "page": 5,
+          "text": "02:31 Radioed dispatch for secondary unit. Rear cargo area observed from exterior.",
+          "redactions": [
+            [
+              48,
+              640,
+              300,
+              14
+            ],
+            [
+              48,
+              620,
+              240,
+              14
+            ],
+            [
+              48,
+              600,
+              280,
+              14
+            ]
+          ]
+        },
+        {
+          "page": 6,
+          "text": "02:40 Transport commenced to 52 Division. Odometer recorded.",
+          "redactions": []
+        },
+        {
+          "page": 7,
+          "text": "03:10 Arrival at booking counter. Property inventory commenced with booking officer.",
+          "redactions": []
+        },
+        {
+          "page": 8,
+          "text": "03:22 Rights to counsel read a second time at booking. Response recorded.",
+          "redactions": []
+        },
+        {
+          "page": 9,
+          "text": "03:40 Breath technician attended. Instrument identified by serial number.",
+          "redactions": []
+        },
+        {
+          "page": 10,
+          "text": "04:05 Samples completed. Certificate printed and attached to file.",
+          "redactions": []
+        },
+        {
+          "page": 11,
+          "text": "04:30 Subject released on undertaking. Copy of documents provided.",
+          "redactions": []
+        }
+      ]
+    }
+  },
+  "okafor_notebook_v3": {
+    "filename": "supp_pkg_scan.pdf",
+    "mime": "application/pdf",
+    "sidecar": {
+      "pages": [
+        {
+          "page": 1,
+          "text": "02:02 Dispatched to reported vehicle stop, eastbound arterial. Unit 1421 acknowledged.",
+          "redactions": []
+        },
+        {
+          "page": 2,
+          "text": "02:10 Vehicle stopped. White sedan, two occupants. Plate recorded in CAD.",
+          "redactions": []
+        },
+        {
+          "page": 3,
+          "text": "02:14 Driver produced licence. Identification recorded. Passenger remained seated.",
+          "redactions": []
+        },
+        {
+          "page": 4,
+          "text": "02:25 Screening demand read from card. Sample provided at 02:27.",
+          "redactions": []
+        },
+        {
+          "page": 5,
+          "text": "02:31 Radioed dispatch for secondary unit. Rear cargo area observed from exterior.",
+          "redactions": [
+            [
+              48,
+              640,
+              300,
+              14
+            ],
+            [
+              48,
+              620,
+              240,
+              14
+            ],
+            [
+              48,
+              600,
+              280,
+              14
+            ]
+          ]
+        },
+        {
+          "page": 6,
+          "text": "03:10 Arrival at booking counter. Property inventory commenced with booking officer.",
+          "redactions": []
+        },
+        {
+          "page": 7,
+          "text": "03:22 Rights to counsel read a second time at booking. Response recorded.",
+          "redactions": []
+        },
+        {
+          "page": 8,
+          "text": "03:40 Breath technician attended. Instrument identified by serial number.",
+          "redactions": []
+        },
+        {
+          "page": 9,
+          "text": "04:05 Samples completed. Certificate printed and attached to file.",
+          "redactions": []
+        },
+        {
+          "page": 10,
+          "text": "04:30 Subject released on undertaking. Copy of documents provided.",
+          "redactions": []
+        }
+      ]
+    }
+  },
+  "okafor_witness": {
+    "filename": "DOC_0031.pdf",
+    "mime": "application/pdf",
+    "sidecar": {
+      "pages": [
+        {
+          "page": 1,
+          "text": "Statement of civilian witness regarding line of sight at the intersection. Typed transcription attached to audio.",
+          "redactions": []
+        },
+        {
+          "page": 2,
+          "text": "Witness confirms position at the north-west corner and describes vehicle direction of travel.",
+          "redactions": []
+        }
+      ]
+    }
+  },
+  "okafor_calibration": {
+    "filename": "scan001.pdf",
+    "mime": "application/pdf",
+    "sidecar": {
+      "pages": [
+        {
+          "page": 1,
+          "text": "Annual bench inspection certificate for breath instrument. Calibration and maintenance record attached.",
+          "redactions": []
+        }
+      ]
+    }
+  },
+  "okafor_roster": {
+    "filename": "Officer_shift_roster_Div14.pdf",
+    "mime": "application/pdf",
+    "sidecar": {
+      "pages": [
+        {
+          "page": 1,
+          "text": "Divisional shift roster listing assigned units and hours for the reporting period.",
+          "redactions": []
+        }
+      ]
+    }
+  },
+  "okafor_911": {
+    "filename": "aud_0417.mp3",
+    "mime": "audio/mpeg",
+    "sidecar": {
+      "duration_s": 1284
+    }
+  },
+  "miller_dashcam": {
+    "filename": "IMG_4471.mp4",
+    "mime": "video/mp4",
+    "sidecar": {
+      "duration_s": 862
+    }
+  },
+  "generic_photos": {
+    "filename": "IMG_0042.pdf",
+    "mime": "application/pdf",
+    "sidecar": {
+      "pages": [
+        {
+          "page": 1,
+          "text": "Photograph contact sheet. Images of the scene and of seized property as inventoried.",
+          "redactions": []
+        }
+      ]
+    }
+  }
+}

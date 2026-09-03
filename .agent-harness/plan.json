@@ -1,0 +1,81 @@
+{
+  "goal": "Build and verify the Spine backend (TS/Fastify/Postgres) and wire the four Stitch screens into React/Vite, closing every loop with machine-run checks.",
+  "domain": "engineering",
+  "max_loop_iterations": 12,
+  "max_attempts_per_task": 3,
+  "no_touch": [
+    "packages/db/schema.sql is the single source of schema truth"
+  ],
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Shared core: ingress, provenance, confidence policy, review queue, supersession, run traces",
+      "done_when": "The unit and pipeline suites pass, including provenance-not-null, supersession, idempotency, dedup and confidence-policy invariants.",
+      "verification": [
+        {
+          "name": "test-suite",
+          "cmd": "npm test"
+        }
+      ]
+    },
+    {
+      "id": "T2",
+      "title": "Deterministic/LLM boundary is provable, not merely documented",
+      "done_when": "No module under core/ imports the AI layer; no date arithmetic lives outside core/.",
+      "verification": [
+        {
+          "name": "boundary",
+          "cmd": "npx tsx --test apps/api/src/tests/boundary.test.ts"
+        }
+      ]
+    },
+    {
+      "id": "T3",
+      "title": "Language rule enforced in generated output and in UI copy",
+      "done_when": "No forbidden phrasing appears in any generated string persisted to the database, nor anywhere in the frontend copy.",
+      "verification": [
+        {
+          "name": "generated-text",
+          "cmd": "npx tsx --test apps/api/src/tests/language.test.ts"
+        },
+        {
+          "name": "ui-copy",
+          "cmd": "node scripts/check-ui-language.mjs"
+        }
+      ]
+    },
+    {
+      "id": "T4",
+      "title": "Seed is reproducible from scratch and produces the engineered Okafor demo",
+      "done_when": "A clean reset yields 8 matters, the 94-day item with 3 follow-ups, a partially received item, the three diff observations and one unmatched file. Seeding is pinned to fixture mode so stage data is reproducible.",
+      "verification": [
+        {
+          "name": "clean-reset",
+          "cmd": "rm -rf .pgdata-verify && DATABASE_URL=pglite:./.pgdata-verify npx tsx apps/api/src/scripts/seed.ts"
+        }
+      ]
+    },
+    {
+      "id": "T5",
+      "title": "Frontend builds and the four screens are wired to the API",
+      "done_when": "vite build succeeds and typecheck is clean.",
+      "verification": [
+        {
+          "name": "web-build",
+          "cmd": "npm -w apps/web run build"
+        }
+      ]
+    },
+    {
+      "id": "T6",
+      "title": "End-to-end: a running API answers every surface the demo needs",
+      "done_when": "The API smoke script passes against a live server, including the live Simulate Ava pipeline.",
+      "verification": [
+        {
+          "name": "api-smoke",
+          "cmd": "node scripts/smoke.mjs"
+        }
+      ]
+    }
+  ]
+}

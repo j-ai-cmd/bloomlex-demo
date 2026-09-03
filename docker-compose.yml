@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: spine
+      POSTGRES_PASSWORD: spine
+      POSTGRES_DB: spine
+    ports: ["5433:5432"]
+    volumes: ["spine_pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spine"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run reset && npm -w apps/api run start"
+    environment:
+      DATABASE_URL: postgres://spine:spine@db:5432/spine
+      PORT: "8080"
+      # KIMI_API_KEY is supplied later. Without it the AI layer runs in
+      # fixture mode and the entire demo still works end to end.
+      KIMI_API_KEY: ${KIMI_API_KEY:-}
+    ports: ["8080:8080"]
+    volumes: [".:/app"]
+    depends_on:
+      db: { condition: service_healthy }
+
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm -w apps/web run dev -- --host 0.0.0.0"
+    environment:
+      API_URL: http://api:8080
+    ports: ["5173:5173"]
+    volumes: [".:/app"]
+    depends_on: [api]
+
+volumes:
+  spine_pgdata:

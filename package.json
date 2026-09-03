@@ -1,0 +1,13 @@
+{
+  "name": "spine",
+  "private": true,
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev": "npm -w apps/api run dev",
+    "migrate": "npm -w apps/api run migrate",
+    "seed": "npm -w apps/api run seed",
+    "test": "npm -w apps/api run test",
+    "fixtures": "npm -w apps/api run fixtures",
+    "reset": "npm run migrate && npm run fixtures && npm run seed"
+  }
+}

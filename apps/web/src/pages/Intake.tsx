@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
-import { Icon, Pill, Button, Card } from '../lib/ui';
+import { Icon, Button, Card } from '../lib/ui';
 import { markDisclosureRan } from './Calendar';
 import type { Page } from '../components/Shell';
 
@@ -101,21 +101,19 @@ const STATUS_STYLE: Record<string, { label: string; tone: string }> = {
   flagged: { label: 'Needs your review', tone: 'awaiting'  },
 };
 
-function FileCard({ f, onReview }: { f: typeof DEMO_FILES[0]; onReview?: () => void }) {
-  const s = STATUS_STYLE[f.status] ?? { label: f.status, tone: 'neutral' };
+function FileCard({ f, onReview, onViewInMatters }: { f: typeof DEMO_FILES[0]; onReview?: () => void; onViewInMatters?: () => void }) {
+  const clickable = f.status === 'flagged' ? !!onReview : !!onViewInMatters;
+  const handler = f.status === 'flagged' ? onReview : onViewInMatters;
   return (
-    <Card className={`p-space-lg flex flex-col gap-space-sm ${f.status === 'flagged' && onReview ? 'cursor-pointer hover:border-accent transition-colors' : ''}`}
-      onClick={f.status === 'flagged' && onReview ? onReview : undefined}>
-      <div className="flex flex-wrap items-start justify-between gap-space-sm">
-        <div className="flex flex-col gap-space-2xs">
-          <span className="font-headline-matter font-bold text-body-strong text-on-surface">
-            {f.docType ?? 'Unidentified document'}
-          </span>
-          <span className="font-code-timestamp text-caption-meta text-on-surface-variant">
-            {f.filename}{f.pages ? ` · ${f.pages} pages` : ''}
-          </span>
-        </div>
-        <Pill tone={s.tone}>{s.label}</Pill>
+    <Card className={`p-space-lg flex flex-col gap-space-sm ${clickable ? 'cursor-pointer hover:border-accent transition-colors' : ''}`}
+      onClick={clickable ? handler : undefined}>
+      <div className="flex flex-col gap-space-2xs">
+        <span className="font-headline-matter font-bold text-body-strong text-on-surface">
+          {f.docType ?? 'Unidentified document'}
+        </span>
+        <span className="font-code-timestamp text-caption-meta text-on-surface-variant">
+          {f.filename}{f.pages ? ` · ${f.pages} pages` : ''}
+        </span>
       </div>
       <p className="font-body-compact text-body-compact text-on-surface-variant">{f.description}</p>
       {f.matchedItem && (
@@ -127,7 +125,13 @@ function FileCard({ f, onReview }: { f: typeof DEMO_FILES[0]; onReview?: () => v
       {f.status === 'flagged' && (
         <div className="flex items-center gap-space-xs text-status-awaiting-fg font-caption-meta text-caption-meta">
           <Icon name="flag" className="text-[15px] shrink-0" />
-          {onReview ? 'Click to review this document →' : 'Open Pending Review to act on this.'}
+          {onReview ? 'Click to review in Pending Review →' : 'Open Pending Review to act on this.'}
+        </div>
+      )}
+      {f.status === 'matched' && onViewInMatters && (
+        <div className="flex items-center gap-space-xs text-on-surface-variant font-caption-meta text-caption-meta">
+          <Icon name="open_in_new" className="text-[13px] shrink-0" />
+          Click to view in Matters →
         </div>
       )}
     </Card>
@@ -342,7 +346,9 @@ export function Intake({ onChanged, setPage }: { onChanged: () => void; setPage:
             )}
 
             {files.map((f) => (
-              <FileCard key={f.id} f={f} onReview={f.status === 'flagged' ? () => setPage('review') : undefined} />
+              <FileCard key={f.id} f={f}
+                onReview={f.status === 'flagged' ? () => setPage('review') : undefined}
+                onViewInMatters={f.status === 'matched' ? () => setPage('disclosure') : undefined} />
             ))}
           </div>
         )}

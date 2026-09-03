@@ -133,6 +133,7 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
   const [day, setDay] = useState(today);
   const [filter, setFilter] = useState('all');
   const [selected, setSelected] = useState<any>(null);
+  const [urgent, setUrgent] = useState<Set<number>>(new Set());
   const [disclosureRan, setDisclosureRan] = useState(() => {
     try { return localStorage.getItem(DISCLOSURE_KEY) === 'true'; } catch { return false; }
   });
@@ -154,7 +155,8 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
   }
 
   const onDay = allForDay(day);
-  const shown = filter === 'all' ? onDay : onDay.filter((c) => c.category === filter);
+  const baseShown = filter === 'all' ? onDay : onDay.filter((c) => c.category === filter);
+  const shown = [...baseShown.filter((c) => urgent.has(c.id)), ...baseShown.filter((c) => !urgent.has(c.id))];
 
   const counts = Object.keys(CATEGORY).reduce<Record<string, number>>((acc, k) => {
     acc[k] = onDay.filter((c) => c.category === k).length; return acc;
@@ -208,44 +210,56 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
 
           {shown.map((c) => {
             const cat = CATEGORY[c.category] ?? CATEGORY.deadline;
+            const isUrgent = urgent.has(c.id);
             return (
-              <button key={c.id} onClick={() => setSelected(c === selected ? null : c)}
-                className={`text-left bg-surface-container-lowest border border-surface-border ${cat.bar} border-l-4 p-space-lg rounded shadow-sm hover:shadow-md transition-all flex flex-col gap-space-sm`}>
-                <div className="flex items-start justify-between gap-space-md">
-                  <div className="flex flex-col gap-space-2xs">
-                    <div className="flex items-center gap-space-xs flex-wrap">
-                      <Pill tone={cat.tone}>{cat.label}</Pill>
-                      <span className="font-code-timestamp text-caption-meta text-on-surface-variant">
-                        {c.matter_ref ?? 'new intake'}
+              <div key={c.id}
+                className={`relative text-left bg-surface-container-lowest border ${isUrgent ? 'border-error' : 'border-surface-border'} ${cat.bar} border-l-4 rounded shadow-sm hover:shadow-md transition-all`}>
+                <button onClick={() => setSelected(c === selected ? null : c)}
+                  className="w-full text-left p-space-lg flex flex-col gap-space-sm">
+                  <div className="flex items-start justify-between gap-space-md">
+                    <div className="flex flex-col gap-space-2xs">
+                      <div className="flex items-center gap-space-xs flex-wrap">
+                        <Pill tone={cat.tone}>{cat.label}</Pill>
+                        <span className="font-code-timestamp text-caption-meta text-on-surface-variant">
+                          {c.matter_ref ?? 'new intake'}
+                        </span>
+                        {c.fromDisclosure && (
+                          <Pill tone="satisfied">From disclosure upload</Pill>
+                        )}
+                        {isUrgent && <Pill tone="overdue">Urgent</Pill>}
+                      </div>
+                      <h2 className="font-headline-matter text-subhead-lead font-bold text-on-surface">{c.action_text}</h2>
+                    </div>
+                    <div className="flex flex-col items-end gap-space-2xs shrink-0">
+                      <span className="font-code-timestamp text-caption-meta text-on-surface font-semibold uppercase">{c.time_precision}</span>
+                      <span className="px-space-xs py-space-2xs bg-surface-container-low border border-surface-border text-on-surface-variant font-code-timestamp text-[10px] rounded">
+                        Ava · {c.channel}
                       </span>
-                      {c.fromDisclosure && (
-                        <Pill tone="satisfied">From disclosure upload</Pill>
-                      )}
                     </div>
-                    <h2 className="font-headline-matter text-subhead-lead font-bold text-on-surface">{c.action_text}</h2>
                   </div>
-                  <div className="flex flex-col items-end gap-space-2xs shrink-0">
-                    <span className="font-code-timestamp text-caption-meta text-on-surface font-semibold uppercase">{c.time_precision}</span>
-                    <span className="px-space-xs py-space-2xs bg-surface-container-low border border-surface-border text-on-surface-variant font-code-timestamp text-[10px] rounded">
-                      Ava · {c.channel}
-                    </span>
-                  </div>
-                </div>
-                <p className="font-body-default text-body-compact text-on-surface-variant line-clamp-1 italic">"{c.verbatim_text}"</p>
+                  <p className="font-body-default text-body-compact text-on-surface-variant line-clamp-1 italic">"{c.verbatim_text}"</p>
 
-                {selected?.id === c.id && (
-                  <div className="mt-space-sm border-t border-surface-border pt-space-sm flex flex-col gap-space-xs">
-                    <span className="font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider">What Ava heard</span>
-                    <p className="font-code-citation text-caption-meta text-on-surface-variant italic bg-surface-container-low border border-surface-border p-space-xs rounded">
-                      "{c.verbatim_text}"
-                    </p>
-                    <div className="flex gap-space-lg mt-space-xs flex-wrap">
-                      <span className="font-caption-meta text-caption-meta text-on-surface-variant">Channel: <b className="text-on-surface">{c.channel}</b></span>
-                      <span className="font-caption-meta text-caption-meta text-on-surface-variant">Confidence: <b className="text-on-surface">{Math.round(c.confidence * 100)}%</b></span>
+                  {selected?.id === c.id && (
+                    <div className="mt-space-sm border-t border-surface-border pt-space-sm flex flex-col gap-space-xs">
+                      <span className="font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider">What Ava heard</span>
+                      <p className="font-code-citation text-caption-meta text-on-surface-variant italic bg-surface-container-low border border-surface-border p-space-xs rounded">
+                        "{c.verbatim_text}"
+                      </p>
+                      <div className="flex gap-space-lg mt-space-xs flex-wrap">
+                        <span className="font-caption-meta text-caption-meta text-on-surface-variant">Channel: <b className="text-on-surface">{c.channel}</b></span>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </button>
+                  )}
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setUrgent((prev) => { const n = new Set(prev); isUrgent ? n.delete(c.id) : n.add(c.id); return n; }); }}
+                  className={`absolute top-space-sm right-space-sm px-space-sm py-space-2xs rounded border font-caption-meta text-caption-meta transition-colors ${
+                    isUrgent
+                      ? 'bg-error text-white border-error'
+                      : 'bg-surface-container border-surface-border text-on-surface-variant hover:border-error hover:text-error'}`}>
+                  {isUrgent ? '⚡ Urgent' : 'Mark urgent'}
+                </button>
+              </div>
             );
           })}
         </div>

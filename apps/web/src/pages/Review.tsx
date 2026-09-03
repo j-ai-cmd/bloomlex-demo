@@ -172,7 +172,6 @@ export function Review({ onChanged }: { onChanged: () => void }) {
                 Could not be matched to a request — decide what to do.
               </span>
               <span className="flex items-center gap-space-sm">
-                <Button onClick={() => dismissIntake(f.id)}>Set aside</Button>
                 <AddToMatterButton onAdd={(mId, mRef) => addIntakeToMatter(f.id, mId, mRef)} />
               </span>
             </div>

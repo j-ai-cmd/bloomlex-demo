@@ -13,23 +13,21 @@ const NEXT_STATES: Record<string, string[]> = {
   'Follow-up Recommended': ['Acknowledged', 'Partially Received', 'Satisfied', 'Refused', 'Needs Review'],
 };
 
-type FilterKey = 'all' | 'matched' | 'partial' | 'needs_review' | 'requested';
+type FilterKey = 'all' | 'matched' | 'partial' | 'requested';
 
 const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: 'all',          label: 'All documents'       },
-  { key: 'matched',      label: 'Verified documents'  },
-  { key: 'partial',      label: 'Partially received'  },
-  { key: 'needs_review', label: 'Pending Review'      },
-  { key: 'requested',    label: 'Requested documents' },
+  { key: 'all',       label: 'All documents'       },
+  { key: 'matched',   label: 'Verified documents'  },
+  { key: 'partial',   label: 'Partially received'  },
+  { key: 'requested', label: 'Requested documents' },
 ];
 
 function matchesFilter(state: string, filter: FilterKey) {
   switch (filter) {
-    case 'matched':      return state === 'Satisfied';
-    case 'partial':      return state === 'Partially Received';
-    case 'needs_review': return state === 'Needs Review';
-    case 'requested':    return ['Requested', 'Acknowledged', 'Follow-up Recommended', 'Refused'].includes(state);
-    default:             return true;
+    case 'matched':   return state === 'Satisfied';
+    case 'partial':   return state === 'Partially Received';
+    case 'requested': return ['Requested', 'Acknowledged', 'Follow-up Recommended', 'Refused', 'Needs Review'].includes(state);
+    default:          return true;
   }
 }
 
@@ -180,11 +178,10 @@ export function Disclosure() {
 
   // Filter chip counts
   const counts: Record<FilterKey, number> = {
-    all:          items.length,
-    matched:      items.filter((i) => matchesFilter(effectiveState(i), 'matched')).length,
-    partial:      items.filter((i) => matchesFilter(effectiveState(i), 'partial')).length,
-    needs_review: items.filter((i) => matchesFilter(effectiveState(i), 'needs_review')).length,
-    requested:    items.filter((i) => matchesFilter(effectiveState(i), 'requested')).length,
+    all:       items.length,
+    matched:   items.filter((i) => matchesFilter(effectiveState(i), 'matched')).length,
+    partial:   items.filter((i) => matchesFilter(effectiveState(i), 'partial')).length,
+    requested: items.filter((i) => matchesFilter(effectiveState(i), 'requested')).length,
   };
 
   return (
@@ -206,12 +203,6 @@ export function Disclosure() {
             </span>
           )}
         </div>
-        {roll && (
-          <div className="flex items-center gap-space-md flex-wrap">
-            <Metric label="Partially served" value={roll.partially_received} tone="text-status-awaiting-fg" />
-            <Metric label="Follow-up needed" value={roll.still_outstanding}  tone="text-status-overdue-fg" />
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-12 w-full min-h-[calc(100vh-9rem)]">
@@ -324,9 +315,3 @@ export function Disclosure() {
   );
 }
 
-const Metric = ({ label, value, tone = 'text-on-surface' }: { label: string; value: any; tone?: string }) => (
-  <div className="flex flex-col items-end">
-    <span className={`font-headline-matter text-subhead-lead font-bold ${tone}`}>{value}</span>
-    <span className="font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider">{label}</span>
-  </div>
-);

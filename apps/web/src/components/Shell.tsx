@@ -40,7 +40,7 @@ export function Shell({ page, setPage, meta, counts, children }: {
             <nav className="flex flex-col gap-space-2xs pt-space-xs">
               <Item id="calendar"    icon="calendar_today" label="Deadlines" />
               <Item id="intake"      icon="cloud_upload"   label="Upload Disclosure" />
-              <Item id="disclosure"  icon="security"       label="Disclosure Register"
+              <Item id="disclosure"  icon="security"       label="Matters"
                     badge={counts.disclosure || null} badgeTone="bg-secondary-fixed text-on-secondary-fixed" />
               <Item id="review"      icon="fact_check"     label="Pending Review"
                     badge={counts.review || null} badgeTone="bg-accent text-accent-ink" />

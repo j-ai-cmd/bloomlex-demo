@@ -19,7 +19,7 @@ export default function App() {
     setMeta(m);
     setCounts({
       disclosure: roll.still_outstanding + roll.needs_review + roll.partially_received,
-      review: queue.proposals.length,
+      review: queue.review_items?.length ?? 0,
     });
   }, []);
 

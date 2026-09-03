@@ -206,10 +206,6 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
 
         {/* main list */}
         <div className="flex-1 p-space-xl flex flex-col gap-space-md">
-          <p className="font-body-compact text-body-compact text-on-surface-variant max-w-3xl">
-            Deadlines Ava surfaced from calls, emails, and passing remarks. Each one stays tied to the sentence it came from.
-          </p>
-
           {shown.length === 0 && (
             <Empty>No deadlines on this day. Use the arrows to navigate to a day with items.</Empty>
           )}

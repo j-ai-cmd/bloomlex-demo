@@ -6,7 +6,7 @@ const INTAKE_KEY = 'bloomlex_intake_state';
 
 type ReviewItem = {
   id: string; title: string; kind: string; matter_ref: string | null;
-  confidence: number | null; created_at: string;
+  confidence: number | null; created_at: string; verbatim_text?: string | null; channel?: string | null;
 };
 
 type IntakeFile = {
@@ -14,16 +14,36 @@ type IntakeFile = {
   description: string; status: 'flagged' | 'matched'; matchedItem: string | null;
 };
 
-const KIND_LABELS: Record<string, string> = {
-  ambiguous_date:          'Unclear date — needs clarification',
-  unmatched_document:      'Document not matched to a request',
-  low_confidence_match:    'Match uncertain — please confirm',
-  missing_item:            'Potentially missing from disclosure',
-  default:                 'Flagged for your attention',
+// ─── Human-readable labels + descriptions per kind ───────────────────────────
+const KIND_META: Record<string, { label: string; description: string }> = {
+  ambiguous_date: {
+    label: 'Unclear date — needs clarification',
+    description: 'Ava detected a date reference in this document but could not determine the exact date. This may affect how the disclosure timeline is calculated. Confirm the correct date before the file moves forward.',
+  },
+  low_confidence_extraction: {
+    label: 'Details could not be extracted',
+    description: 'Ava was unable to reliably read the key details from this document. The scan quality or formatting may be preventing a clean read. Manually review the document and confirm the relevant information.',
+  },
+  low_confidence_match: {
+    label: 'Match uncertain — please confirm',
+    description: 'Ava found a possible match to a disclosure request but is not confident enough to confirm it automatically. Review the document and verify whether it satisfies the outstanding request.',
+  },
+  missing_item: {
+    label: 'Potentially missing from disclosure',
+    description: 'This item appears to be absent from the disclosure package received. It may need to be followed up with the Crown. Check whether it was served separately or is outstanding.',
+  },
+  unmatched_document: {
+    label: 'Document not matched to a request',
+    description: 'This document arrived in the disclosure package but could not be linked to any outstanding request on file. It may be supplementary material, misfiled, or something that should be logged as a new item.',
+  },
+  default: {
+    label: 'Flagged for your attention',
+    description: 'Ava flagged this item because it could not be resolved automatically. Review the details and decide how to proceed before the matter moves forward.',
+  },
 };
 
-function kindLabel(kind: string) {
-  return KIND_LABELS[kind] ?? KIND_LABELS.default;
+function kindMeta(kind: string) {
+  return KIND_META[kind] ?? KIND_META.default;
 }
 
 function loadIntakeFlagged(): IntakeFile[] {
@@ -96,6 +116,116 @@ function AddToMatterButton({ onAdd }: { onAdd: (matterId: string, matterRef: str
   );
 }
 
+// ─── Expanded detail view ────────────────────────────────────────────────────
+function ExpandedReviewItem({
+  item, onBack, onResolve, busy,
+}: {
+  item: ReviewItem; onBack: () => void; onResolve: () => void; busy: boolean;
+}) {
+  const meta = kindMeta(item.kind);
+  return (
+    <div className="flex flex-col gap-space-lg p-space-xl max-w-4xl mx-auto w-full">
+      <button onClick={onBack}
+        className="flex items-center gap-space-xs font-body-compact text-body-compact text-on-surface-variant hover:text-on-surface transition-colors self-start">
+        <Icon name="arrow_back" className="text-[18px]" />
+        Back to all items
+      </button>
+
+      <Card className="p-space-xl flex flex-col gap-space-lg">
+        <div className="flex flex-wrap items-start justify-between gap-space-md">
+          <div className="flex flex-col gap-space-xs min-w-0">
+            <span className="font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider">
+              {meta.label}
+            </span>
+            <h2 className="font-headline-matter text-headline-matter font-bold text-on-surface">
+              {item.title}
+            </h2>
+            {item.matter_ref && (
+              <span className="font-code-timestamp text-caption-meta text-on-surface-variant">{item.matter_ref}</span>
+            )}
+          </div>
+          <span className="px-space-sm py-space-2xs rounded border border-status-awaiting-border bg-status-awaiting-bg text-status-awaiting-fg font-caption-meta text-caption-meta font-semibold">
+            Needs review
+          </span>
+        </div>
+
+        <p className="font-body-default text-body-default text-on-surface-variant">{meta.description}</p>
+
+        {item.verbatim_text && (
+          <div className="flex flex-col gap-space-xs">
+            <span className="font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider">What Ava heard</span>
+            <p className="font-code-citation text-caption-meta text-on-surface-variant italic bg-surface-container-low border border-surface-border p-space-md rounded">
+              "{item.verbatim_text}"
+            </p>
+            {item.channel && (
+              <span className="font-caption-meta text-caption-meta text-on-surface-variant">Channel: <b className="text-on-surface">{item.channel}</b></span>
+            )}
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center justify-between gap-space-md pt-space-sm border-t border-surface-border">
+          <span className="font-caption-meta text-caption-meta text-on-surface-variant">
+            Mark as resolved once you have reviewed and decided how to proceed.
+          </span>
+          <Button variant="primary" onClick={onResolve} disabled={busy}>
+            <Icon name="check" className="text-[16px]" />
+            {busy ? 'Saving…' : 'Mark resolved'}
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ─── Expanded intake flagged item ─────────────────────────────────────────────
+function ExpandedIntakeItem({
+  file, onBack, onAdd,
+}: {
+  file: IntakeFile; onBack: () => void; onAdd: (mId: string, mRef: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-space-lg p-space-xl max-w-4xl mx-auto w-full">
+      <button onClick={onBack}
+        className="flex items-center gap-space-xs font-body-compact text-body-compact text-on-surface-variant hover:text-on-surface transition-colors self-start">
+        <Icon name="arrow_back" className="text-[18px]" />
+        Back to all items
+      </button>
+
+      <Card className="p-space-xl flex flex-col gap-space-lg">
+        <div className="flex flex-wrap items-start justify-between gap-space-md">
+          <div className="flex flex-col gap-space-xs min-w-0">
+            <span className="font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider">
+              Document not matched to a request
+            </span>
+            <h2 className="font-headline-matter text-headline-matter font-bold text-on-surface">
+              {file.docType ?? 'Unidentified document'}
+            </h2>
+            <span className="font-code-timestamp text-caption-meta text-on-surface-variant">
+              {file.filename}{file.pages ? ` · ${file.pages} pages` : ''}
+            </span>
+          </div>
+          <span className="px-space-sm py-space-2xs rounded border border-status-awaiting-border bg-status-awaiting-bg text-status-awaiting-fg font-caption-meta text-caption-meta font-semibold">
+            Needs review
+          </span>
+        </div>
+
+        <p className="font-body-default text-body-default text-on-surface-variant">{file.description}</p>
+
+        <p className="font-body-default text-body-default text-on-surface-variant">
+          This document arrived in the disclosure package but could not be linked to any outstanding request on file. Add it to the relevant matter or dismiss it if it is not applicable.
+        </p>
+
+        <div className="flex flex-wrap items-center justify-between gap-space-md pt-space-sm border-t border-surface-border">
+          <span className="font-caption-meta text-caption-meta text-on-surface-variant">
+            Assign to a matter to log it in the disclosure register.
+          </span>
+          <AddToMatterButton onAdd={onAdd} />
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 export function Review({ onChanged }: { onChanged: () => void }) {
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [intakeFlagged, setIntakeFlagged] = useState<IntakeFile[]>([]);
@@ -103,14 +233,33 @@ export function Review({ onChanged }: { onChanged: () => void }) {
   const [busy, setBusy] = useState('');
   const [resolved, setResolved] = useState<Set<string>>(new Set());
   const [intakeActioned, setIntakeActioned] = useState<Set<string>>(new Set());
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const [expandedIntakeId, setExpandedIntakeId] = useState<string | null>(null);
 
   async function load() {
     const [queue, ac] = await Promise.all([
       api('/v1/review-queue'), api('/v1/actors').catch(() => []),
     ]);
-    setItems(queue.review_items ?? []);
+    const reviewItems = queue.review_items ?? [];
+    setItems(reviewItems);
     setActors(ac ?? []);
-    setIntakeFlagged(loadIntakeFlagged());
+    const flagged = loadIntakeFlagged();
+    setIntakeFlagged(flagged);
+
+    // Check nav intent — auto-open a specific item
+    try {
+      const raw = sessionStorage.getItem('bloomlex_nav_intent');
+      if (raw) {
+        const intent = JSON.parse(raw);
+        if (intent.page === 'review') {
+          if (intent.filename) {
+            const match = flagged.find((f) => f.filename === intent.filename);
+            if (match) setExpandedIntakeId(match.id);
+          }
+          sessionStorage.removeItem('bloomlex_nav_intent');
+        }
+      }
+    } catch {}
   }
 
   useEffect(() => { load(); }, []);
@@ -122,23 +271,44 @@ export function Review({ onChanged }: { onChanged: () => void }) {
     try {
       await post(`/v1/review-items/${id}/resolve`, { status: 'resolved', actor_id: human?.id ?? null });
       setResolved((prev) => new Set([...prev, id]));
+      setExpandedItemId(null);
       onChanged();
     } finally { setBusy(''); }
   }
 
   function addIntakeToMatter(fileId: string, _matterId: string, _matterRef: string) {
     setIntakeActioned((prev) => new Set([...prev, fileId]));
-    onChanged();
-  }
-
-  function dismissIntake(fileId: string) {
-    setIntakeActioned((prev) => new Set([...prev, fileId]));
+    setExpandedIntakeId(null);
     onChanged();
   }
 
   const pendingItems   = items.filter((r) => !resolved.has(r.id));
   const pendingIntake  = intakeFlagged.filter((f) => !intakeActioned.has(f.id));
   const totalPending   = pendingItems.length + pendingIntake.length;
+
+  const expandedItem   = expandedItemId   ? pendingItems.find((r) => r.id === expandedItemId) : null;
+  const expandedIntake = expandedIntakeId ? pendingIntake.find((f) => f.id === expandedIntakeId) : null;
+
+  // ── Expanded views ──
+  if (expandedItem) {
+    return (
+      <ExpandedReviewItem
+        item={expandedItem}
+        onBack={() => setExpandedItemId(null)}
+        onResolve={() => resolve(expandedItem.id)}
+        busy={busy === expandedItem.id}
+      />
+    );
+  }
+  if (expandedIntake) {
+    return (
+      <ExpandedIntakeItem
+        file={expandedIntake}
+        onBack={() => setExpandedIntakeId(null)}
+        onAdd={(mId, mRef) => addIntakeToMatter(expandedIntake.id, mId, mRef)}
+      />
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto w-full px-space-xl py-space-xl flex flex-col gap-space-xl">
@@ -154,49 +324,42 @@ export function Review({ onChanged }: { onChanged: () => void }) {
         <Empty>Nothing waiting for your review. Upload a disclosure package or check back after the next update.</Empty>
       )}
 
-      {/* ── All pending items — flat list ── */}
-      <div className="flex flex-col gap-space-md">
+      {/* ── Flat list — click any row to expand ── */}
+      <div className="flex flex-col divide-y divide-surface-border border border-surface-border rounded-lg overflow-hidden">
         {pendingIntake.map((f) => (
-          <Card key={f.id} className="p-space-lg flex flex-col gap-space-md">
-            <div className="flex flex-col gap-space-2xs">
+          <button key={f.id} onClick={() => setExpandedIntakeId(f.id)}
+            className="w-full text-left bg-surface-container-lowest hover:bg-surface-container transition-colors p-space-md flex items-start justify-between gap-space-md">
+            <div className="flex flex-col gap-space-2xs min-w-0">
               <span className="font-headline-matter font-bold text-body-strong text-on-surface">
                 {f.docType ?? 'Unidentified document'}
               </span>
               <span className="font-code-timestamp text-caption-meta text-on-surface-variant">
                 {f.filename}{f.pages ? ` · ${f.pages} pages` : ''}
               </span>
-            </div>
-            <p className="font-body-compact text-body-compact text-on-surface-variant">{f.description}</p>
-            <div className="flex flex-wrap items-center justify-between gap-space-md pt-space-xs border-t border-surface-border">
               <span className="font-caption-meta text-caption-meta text-on-surface-variant">
-                Could not be matched to a request — decide what to do.
-              </span>
-              <span className="flex items-center gap-space-sm">
-                <AddToMatterButton onAdd={(mId, mRef) => addIntakeToMatter(f.id, mId, mRef)} />
+                Document not matched to a request — decide what to do.
               </span>
             </div>
-          </Card>
+            <Icon name="chevron_right" className="text-[20px] text-on-surface-variant shrink-0 mt-space-2xs" />
+          </button>
         ))}
 
-        {pendingItems.map((r) => (
-          <Card key={r.id} className="p-space-lg flex flex-col gap-space-md">
-            <div className="flex flex-col gap-space-2xs">
-              <span className="font-headline-matter font-bold text-body-strong text-on-surface">{r.title}</span>
-              {r.matter_ref && (
-                <span className="font-code-timestamp text-caption-meta text-on-surface-variant">{r.matter_ref}</span>
-              )}
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-space-md pt-space-xs border-t border-surface-border">
-              <span className="font-caption-meta text-caption-meta text-on-surface-variant">
-                Needs your attention before this file moves forward.
-              </span>
-              <Button variant="primary" onClick={() => resolve(r.id)} disabled={busy === r.id}>
-                <Icon name="check" className="text-[16px]" />
-                {busy === r.id ? 'Saving…' : 'Mark resolved'}
-              </Button>
-            </div>
-          </Card>
-        ))}
+        {pendingItems.map((r) => {
+          const meta = kindMeta(r.kind);
+          return (
+            <button key={r.id} onClick={() => setExpandedItemId(r.id)}
+              className="w-full text-left bg-surface-container-lowest hover:bg-surface-container transition-colors p-space-md flex items-start justify-between gap-space-md">
+              <div className="flex flex-col gap-space-2xs min-w-0">
+                <span className="font-headline-matter font-bold text-body-strong text-on-surface">{r.title}</span>
+                {r.matter_ref && (
+                  <span className="font-code-timestamp text-caption-meta text-on-surface-variant">{r.matter_ref}</span>
+                )}
+                <span className="font-caption-meta text-caption-meta text-on-surface-variant">{meta.label}</span>
+              </div>
+              <Icon name="chevron_right" className="text-[20px] text-on-surface-variant shrink-0 mt-space-2xs" />
+            </button>
+          );
+        })}
       </div>
     </div>
   );

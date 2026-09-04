@@ -14,6 +14,7 @@ const DEMO_FILES = [
     description: 'Officer notebook entries spanning 10 pages. Occurrence number and event date were not recoverable from the scan.',
     status: 'flagged' as const,
     matchedItem: null,
+    matchedSeq: null as number | null,
   },
   {
     id: 'd2',
@@ -23,6 +24,7 @@ const DEMO_FILES = [
     description: 'Occurrence report with witness statements.',
     status: 'matched' as const,
     matchedItem: 'Request Item 3 — General Occurrence Report',
+    matchedSeq: 3 as number | null,
   },
   {
     id: 'd3',
@@ -32,6 +34,7 @@ const DEMO_FILES = [
     description: 'Division 14 officer shift roster.',
     status: 'matched' as const,
     matchedItem: 'Request Item 7 — Officer Notes and Records',
+    matchedSeq: 7 as number | null,
   },
 ];
 
@@ -316,14 +319,20 @@ export function Intake({ onChanged, setPage }: { onChanged: () => void; setPage:
                 {files.length} {files.length === 1 ? 'document' : 'documents'} reviewed
               </h2>
               <Button onClick={() => { setFiles(null); setError(''); setStep(0); }}>
-                Process another package
+                Process new package
               </Button>
             </div>
 
             {files.map((f) => (
               <FileCard key={f.id} f={f}
-                onReview={f.status === 'flagged' ? () => setPage('review') : undefined}
-                onViewInMatters={f.status === 'matched' ? () => setPage('disclosure') : undefined} />
+                onReview={f.status === 'flagged' ? () => {
+                  try { sessionStorage.setItem('bloomlex_nav_intent', JSON.stringify({ page: 'review', filename: f.filename })); } catch {}
+                  setPage('review');
+                } : undefined}
+                onViewInMatters={f.status === 'matched' && f.matchedSeq ? () => {
+                  try { sessionStorage.setItem('bloomlex_nav_intent', JSON.stringify({ page: 'disclosure', matterRef: matterRef, itemSeq: f.matchedSeq })); } catch {}
+                  setPage('disclosure');
+                } : undefined} />
             ))}
           </div>
         )}

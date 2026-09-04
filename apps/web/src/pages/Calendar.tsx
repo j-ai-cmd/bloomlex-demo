@@ -179,7 +179,6 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
               <Button onClick={() => setDay(shiftDay(day, 1))}><Icon name="chevron_right" className="text-[18px]" /></Button>
               <h1 className="font-headline-matter text-headline-matter font-bold text-on-surface ml-space-xs tracking-tight">{fmtLong(day)}</h1>
             </div>
-            {day !== today && <Button onClick={() => setDay(today)}>Today</Button>}
           </div>
         </div>
 

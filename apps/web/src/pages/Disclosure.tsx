@@ -150,13 +150,27 @@ export function Disclosure() {
   // client-side state overrides (demo — no API write needed)
   const [stateOverrides, setStateOverrides] = useState<Record<string, string>>({});
 
+  const [navIntent, setNavIntent] = useState<{ matterRef?: string; itemSeq?: number } | null>(null);
+
   useEffect(() => {
+    let intent: { matterRef?: string; itemSeq?: number } | null = null;
+    try {
+      const raw = sessionStorage.getItem('bloomlex_nav_intent');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.page === 'disclosure') intent = { matterRef: parsed.matterRef, itemSeq: parsed.itemSeq };
+        sessionStorage.removeItem('bloomlex_nav_intent');
+      }
+    } catch {}
+    if (intent) setNavIntent(intent);
+
     api('/v1/matters').then((m: any[]) => {
       const sorted = [...m].sort((a, b) =>
         a.matter_ref === 'R. v. Okafor' ? -1 : b.matter_ref === 'R. v. Okafor' ? 1 : 0
       );
       setMatters(sorted);
-      setMatterId(sorted.find((x) => x.matter_ref === 'R. v. Okafor')?.id ?? sorted[0]?.id ?? '');
+      const targetRef = intent?.matterRef ?? 'R. v. Okafor';
+      setMatterId(sorted.find((x) => x.matter_ref === targetRef)?.id ?? sorted[0]?.id ?? '');
     });
     api('/v1/review-queue').then((q: any) => setReviewItems(q.review_items ?? []));
   }, []);
@@ -164,8 +178,14 @@ export function Disclosure() {
   useEffect(() => {
     if (!matterId) return;
     setRegister(null); setExpandedId(null);
-    api(`/v1/matters/${matterId}/register`).then(setRegister);
-  }, [matterId]);
+    api(`/v1/matters/${matterId}/register`).then((reg) => {
+      setRegister(reg);
+      if (navIntent?.itemSeq) {
+        const target = (reg?.items ?? []).find((it: any) => it.seq === navIntent.itemSeq);
+        if (target) { setExpandedId(target.id); setNavIntent(null); }
+      }
+    });
+  }, [matterId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const matter = matters.find((m) => m.id === matterId);
   const roll   = register?.rollup;

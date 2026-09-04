@@ -30,9 +30,9 @@ export function Shell({ page, setPage, meta, counts, children }: {
     <>
       <aside className="fixed left-0 top-0 h-full w-sidebar-width bg-surface-container-low border-r border-surface-border z-50 flex flex-col justify-between select-none">
         <div className="flex flex-col">
-          <div className="p-space-lg flex flex-col gap-space-sm border-b border-surface-border/60">
+          <div className="p-space-lg flex flex-col items-center gap-space-sm border-b border-surface-border/60">
             <Logo />
-            <span className="font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider">
+            <span className="font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider text-center w-full">
               {meta?.firm ?? '—'}
             </span>
           </div>

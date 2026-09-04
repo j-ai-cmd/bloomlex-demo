@@ -30,7 +30,7 @@ export default function App() {
     <Shell page={page} setPage={setPage} meta={meta} counts={counts}>
       {page === 'calendar' && <Calendar onChanged={bump} />}
       {page === 'intake' && <Intake onChanged={bump} setPage={setPage} />}
-      {page === 'disclosure' && <Disclosure />}
+      {page === 'disclosure' && <Disclosure setPage={setPage} />}
       {page === 'review' && <Review onChanged={bump} />}
     </Shell>
   );

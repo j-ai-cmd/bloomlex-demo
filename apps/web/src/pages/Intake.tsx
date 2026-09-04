@@ -238,8 +238,9 @@ export function Intake({ onChanged, setPage }: { onChanged: () => void; setPage:
           pages: f.page_count ?? null,
           docType: f.doc_type ?? null,
           description: f.description ?? 'Could not be identified — raised for your review.',
-          status: f.doc_type ? 'matched' as const : 'flagged' as const,
+          status: f.matched_item ? 'matched' as const : 'flagged' as const,
           matchedItem: f.matched_item ?? null,
+          matchedSeq: f.matched_seq ?? null,
         }));
         setFiles(mapped);
         setAnomalies(data.result?.anomalies ?? 0);

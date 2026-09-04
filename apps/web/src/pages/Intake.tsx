@@ -264,7 +264,7 @@ export function Intake({ onChanged, setPage }: { onChanged: () => void; setPage:
         <div>
           <h1 className="font-display-hero text-display-hero text-on-surface">Upload a disclosure package.</h1>
           <p className="font-body-default text-body-default text-on-surface-variant max-w-2xl mt-space-sm">
-            Drop the files the Crown served. BloomLex checks them against this matter's outstanding requests and flags anything that needs your attention.
+            Drop the files the Crown served. BloomLex checks them against their matter's outstanding requests and flags anything that needs your attention.
           </p>
         </div>
 
@@ -293,7 +293,7 @@ export function Intake({ onChanged, setPage }: { onChanged: () => void; setPage:
               Drop the disclosure package here
             </span>
             <span className="font-body-compact text-body-compact text-on-surface-variant">
-              PDF or any file format the Crown provides
+              PDF or any file format.
             </span>
             <input ref={fileRef} type="file" multiple hidden onChange={(e) => upload(e.target.files)} />
             <div className="flex flex-wrap items-center gap-space-sm">

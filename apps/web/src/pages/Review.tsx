@@ -138,8 +138,7 @@ function ExpandedReviewItem({
             {item.channel && <span className="font-caption-meta text-caption-meta text-on-surface-variant">Channel: <b className="text-on-surface">{item.channel}</b></span>}
           </div>
         )}
-        <div className="flex flex-wrap items-center justify-between gap-space-md pt-space-sm border-t border-surface-border">
-          <span className="font-caption-meta text-caption-meta text-on-surface-variant">Mark resolved once you have reviewed and decided how to proceed.</span>
+        <div className="flex flex-wrap items-center justify-end gap-space-md pt-space-sm border-t border-surface-border">
           <Button variant="primary" onClick={onResolve} disabled={busy}>
             <Icon name="check" className="text-[16px]" />
             {busy ? 'Saving…' : 'Mark resolved'}
@@ -172,8 +171,7 @@ function ExpandedIntakeItem({ file, onBack, onAdd }: {
         <p className="font-body-default text-body-default text-on-surface-variant">
           This document arrived in the disclosure package but could not be linked to any outstanding request on file. Add it to the relevant matter or dismiss it if it is not applicable.
         </p>
-        <div className="flex flex-wrap items-center justify-between gap-space-md pt-space-sm border-t border-surface-border">
-          <span className="font-caption-meta text-caption-meta text-on-surface-variant">Assign to a matter to log it in the disclosure register.</span>
+        <div className="flex flex-wrap items-center justify-end gap-space-md pt-space-sm border-t border-surface-border">
           <AddToMatterButton onAdd={onAdd} />
         </div>
       </Card>
@@ -290,8 +288,8 @@ export function Review({ onChanged }: { onChanged: () => void }) {
               <Icon name="chevron_right" className="text-[20px] text-on-surface-variant shrink-0" />
             </div>
             <p className="font-body-compact text-body-compact text-on-surface-variant">{f.description}</p>
-            <div className="flex items-center justify-between pt-space-xs border-t border-surface-border">
-              <span className="font-caption-meta text-caption-meta text-on-surface-variant">Document not matched to a request — decide what to do.</span>
+            <div className="flex items-center justify-end pt-space-xs border-t border-surface-border"
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}>
               <AddToMatterButton onAdd={(mId, mRef) => { addIntakeToMatter(f.id); }} />
             </div>
           </Card>
@@ -310,8 +308,7 @@ export function Review({ onChanged }: { onChanged: () => void }) {
                 <Icon name="chevron_right" className="text-[20px] text-on-surface-variant shrink-0" />
               </div>
               <p className="font-body-compact text-body-compact text-on-surface-variant">{meta.label}</p>
-              <div className="flex items-center justify-between pt-space-xs border-t border-surface-border" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-                <span className="font-caption-meta text-caption-meta text-on-surface-variant">Needs your attention before this file moves forward.</span>
+              <div className="flex items-center justify-end pt-space-xs border-t border-surface-border" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                 <Button variant="primary" onClick={(e: React.MouseEvent) => { e.stopPropagation(); resolve(r.id); }} disabled={busy === r.id}>
                   <Icon name="check" className="text-[16px]" />
                   {busy === r.id ? 'Saving…' : 'Mark resolved'}

@@ -12,16 +12,21 @@ const KIND_DESC: Record<string, { label: string; description: string }> = {
   default:                 { label: 'Flagged for your attention',          description: 'Ava flagged this item because it could not be resolved automatically. Review the details and decide how to proceed.' },
 };
 
-// State machine: which states a user can transition TO from each current state
+// States align with filter chips: Requested / Partially Received / Verified (Satisfied)
 const NEXT_STATES: Record<string, string[]> = {
-  'Requested':             ['Acknowledged', 'Partially Received', 'Satisfied', 'Refused', 'Needs Review'],
-  'Acknowledged':          ['Partially Received', 'Satisfied', 'Refused', 'Needs Review'],
-  'Partially Received':    ['Satisfied', 'Refused', 'Needs Review'],
-  'Satisfied':             ['Partially Received', 'Needs Review'],
-  'Refused':               ['Needs Review', 'Partially Received', 'Satisfied'],
-  'Needs Review':          ['Partially Received', 'Satisfied', 'Refused'],
-  'Follow-up Recommended': ['Acknowledged', 'Partially Received', 'Satisfied', 'Refused', 'Needs Review'],
+  'Requested':             ['Partially Received', 'Satisfied'],
+  'Acknowledged':          ['Partially Received', 'Satisfied', 'Requested'],
+  'Partially Received':    ['Satisfied', 'Requested'],
+  'Satisfied':             ['Partially Received', 'Requested'],
+  'Refused':               ['Partially Received', 'Satisfied', 'Requested'],
+  'Needs Review':          ['Partially Received', 'Satisfied', 'Requested'],
+  'Follow-up Recommended': ['Partially Received', 'Satisfied', 'Requested'],
 };
+
+// Display label for each state value
+function displayState(s: string) {
+  return s === 'Satisfied' ? 'Verified' : s;
+}
 
 type FilterKey = 'all' | 'matched' | 'partial' | 'requested' | 'pending_review';
 
@@ -89,10 +94,8 @@ function StateTag({ state, onChangeState }: { state: string; onChangeState: (s: 
               <span className={`w-2 h-2 rounded-full ${
                 s === 'Satisfied'          ? 'bg-status-satisfied-fg'
                 : s === 'Partially Received' ? 'bg-status-awaiting-fg'
-                : s === 'Refused'            ? 'bg-status-closed-fg'
-                : s === 'Needs Review'       ? 'bg-status-awaiting-fg'
                 : 'bg-on-surface-variant'}`} />
-              {s === 'Satisfied' ? 'Verified' : s}
+              {displayState(s)}
             </button>
           ))}
         </div>

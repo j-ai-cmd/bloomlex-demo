@@ -38,8 +38,11 @@ export const Button = ({ variant = 'ghost', className = '', ...p }: any) => {
   return <button {...p} className={`px-space-md py-space-xs rounded border font-body-strong text-body-strong transition-colors flex items-center gap-space-xs ${v} ${className}`} />;
 };
 
-export const Card = ({ className = '', children }: any) => (
-  <div className={`bg-surface-container-lowest border border-surface-border rounded shadow-sm ${className}`}>{children}</div>
+export const Card = ({ className = '', children, onClick, ...rest }: any) => (
+  <div {...rest} onClick={onClick}
+    className={`bg-surface-container-lowest border border-surface-border rounded shadow-sm ${className}`}>
+    {children}
+  </div>
 );
 
 export const SectionTitle = ({ children, icon }: { children: React.ReactNode; icon?: string }) => (

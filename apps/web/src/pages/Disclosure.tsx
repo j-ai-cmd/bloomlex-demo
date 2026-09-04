@@ -2,6 +2,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import { api, fmtDate } from '../lib/api';
 import { Icon, Pill, Card, Empty, stateTone } from '../lib/ui';
 
+const KIND_DESC: Record<string, { label: string; description: string }> = {
+  ambiguous_date:          { label: 'Unclear date — needs clarification',  description: 'Ava detected a date reference in this document but could not determine the exact date. Confirm the correct date before the file moves forward.' },
+  low_confidence_extraction: { label: 'Details could not be extracted',   description: 'Ava was unable to reliably read the key details from this document. Manually review and confirm the relevant information.' },
+  low_confidence_match:    { label: 'Match uncertain — please confirm',    description: 'Ava found a possible match to a disclosure request but is not confident enough to confirm it automatically. Verify whether it satisfies the outstanding request.' },
+  missing_item:            { label: 'Potentially missing from disclosure', description: 'This item appears to be absent from the disclosure package received. Check whether it was served separately or is still outstanding.' },
+  unmatched_document:      { label: 'Document not matched to a request',   description: 'This document arrived in the disclosure package but could not be linked to any outstanding request on file.' },
+  default:                 { label: 'Flagged for your attention',          description: 'Ava flagged this item because it could not be resolved automatically. Review the details and decide how to proceed.' },
+};
+
 // State machine: which states a user can transition TO from each current state
 const NEXT_STATES: Record<string, string[]> = {
   'Requested':             ['Acknowledged', 'Partially Received', 'Satisfied', 'Refused', 'Needs Review'],
@@ -141,12 +150,13 @@ function InfoBlock({ label, value }: { label: string; value: any }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export function Disclosure() {
-  const [matters, setMatters]       = useState<any[]>([]);
-  const [matterId, setMatterId]     = useState<string>('');
-  const [register, setRegister]     = useState<any>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [filter, setFilter]         = useState<FilterKey>('all');
-  const [reviewItems, setReviewItems] = useState<any[]>([]);
+  const [matters, setMatters]           = useState<any[]>([]);
+  const [matterId, setMatterId]         = useState<string>('');
+  const [register, setRegister]         = useState<any>(null);
+  const [expandedId, setExpandedId]     = useState<string | null>(null);
+  const [filter, setFilter]             = useState<FilterKey>('all');
+  const [reviewItems, setReviewItems]   = useState<any[]>([]);
+  const [expandedReviewId, setExpandedReviewId] = useState<string | null>(null);
   // client-side state overrides (demo — no API write needed)
   const [stateOverrides, setStateOverrides] = useState<Record<string, string>>({});
 
@@ -279,7 +289,46 @@ export function Disclosure() {
               onBack={() => setExpandedId(null)}
               onChangeState={(s) => changeState(expanded.id, s)}
             />
-          ) : (
+          ) : expandedReviewId ? (() => {
+            const r = matterReviewItems.find((x: any) => x.id === expandedReviewId);
+            if (!r) return null;
+            const meta = KIND_DESC[r.kind] ?? KIND_DESC.default;
+            return (
+              <div className="flex flex-col gap-space-lg p-space-xl">
+                <button onClick={() => setExpandedReviewId(null)}
+                  className="flex items-center gap-space-xs font-body-compact text-body-compact text-on-surface-variant hover:text-on-surface transition-colors self-start">
+                  <Icon name="arrow_back" className="text-[18px]" />
+                  Back to all documents
+                </button>
+                <Card className="p-space-xl flex flex-col gap-space-lg">
+                  <div className="flex flex-wrap items-start justify-between gap-space-md">
+                    <div className="flex flex-col gap-space-xs min-w-0">
+                      <span className="font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider">{meta.label}</span>
+                      <h2 className="font-headline-matter text-headline-matter font-bold text-on-surface">{r.title}</h2>
+                      {r.matter_ref && <span className="font-code-timestamp text-caption-meta text-on-surface-variant">{r.matter_ref}</span>}
+                    </div>
+                    <span className="px-space-sm py-space-2xs rounded border border-status-awaiting-border bg-status-awaiting-bg text-status-awaiting-fg font-caption-meta text-caption-meta font-semibold">
+                      Needs review
+                    </span>
+                  </div>
+                  <p className="font-body-default text-body-default text-on-surface-variant">{meta.description}</p>
+                  {r.verbatim_text && (
+                    <div className="flex flex-col gap-space-xs">
+                      <span className="font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider">What Ava heard</span>
+                      <p className="font-code-citation text-caption-meta text-on-surface-variant italic bg-surface-container-low border border-surface-border p-space-md rounded">
+                        "{r.verbatim_text}"
+                      </p>
+                    </div>
+                  )}
+                  <div className="pt-space-sm border-t border-surface-border">
+                    <p className="font-caption-meta text-caption-meta text-on-surface-variant">
+                      Open <b className="text-on-surface">Pending Review</b> to mark this resolved once you have actioned it.
+                    </p>
+                  </div>
+                </Card>
+              </div>
+            );
+          })() : (
             <div className="flex flex-col gap-space-lg p-space-xl">
               {/* filter chips */}
               <div className="flex flex-wrap gap-space-xs">
@@ -313,14 +362,20 @@ export function Disclosure() {
 
               {filter === 'pending_review' && matterReviewItems.length > 0 && (
                 <div className="flex flex-col divide-y divide-surface-border border border-surface-border rounded-lg overflow-hidden">
-                  {matterReviewItems.map((r: any) => (
-                    <div key={r.id} className="bg-surface-container-lowest p-space-md flex flex-col gap-space-2xs">
-                      <span className="font-body-strong text-body-strong text-on-surface">{r.title}</span>
-                      <span className="font-caption-meta text-caption-meta text-on-surface-variant">
-                        Flagged for review · {r.matter_ref}
-                      </span>
-                    </div>
-                  ))}
+                  {matterReviewItems.map((r: any) => {
+                    const meta = KIND_DESC[r.kind] ?? KIND_DESC.default;
+                    return (
+                      <button key={r.id} onClick={() => setExpandedReviewId(r.id)}
+                        className="w-full text-left bg-surface-container-lowest hover:bg-surface-container transition-colors p-space-md flex items-start justify-between gap-space-md">
+                        <span className="flex flex-col gap-space-2xs min-w-0 flex-1">
+                          <span className="font-body-strong text-body-strong text-on-surface">{r.title}</span>
+                          {r.matter_ref && <span className="font-code-timestamp text-caption-meta text-on-surface-variant">{r.matter_ref}</span>}
+                          <span className="font-caption-meta text-caption-meta text-on-surface-variant">{meta.label}</span>
+                        </span>
+                        <Icon name="chevron_right" className="text-[20px] text-on-surface-variant shrink-0 mt-space-2xs" />
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 

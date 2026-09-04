@@ -26,7 +26,7 @@ export const stateTone = (s: string) =>
   s === 'Satisfied' ? 'satisfied'
   : s === 'Partially Received' ? 'awaiting'
   : s === 'Refused' ? 'closed'
-  : s === 'Needs Review' ? 'awaiting'
+  : s === 'Needs Review' ? 'overdue'
   : 'overdue';
 
 export const Button = ({ variant = 'ghost', className = '', ...p }: any) => {

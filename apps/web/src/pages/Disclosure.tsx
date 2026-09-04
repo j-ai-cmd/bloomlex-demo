@@ -12,20 +12,22 @@ const KIND_DESC: Record<string, { label: string; description: string }> = {
   default:                 { label: 'Flagged for your attention',          description: 'Ava flagged this item because it could not be resolved automatically. Review the details and decide how to proceed.' },
 };
 
-// States align with filter chips: Requested / Partially Received / Verified (Satisfied)
+// 4-state system: Requested / Partially Received / Verified (Satisfied) / Pending Review (Needs Review)
 const NEXT_STATES: Record<string, string[]> = {
-  'Requested':             ['Partially Received', 'Satisfied'],
-  'Acknowledged':          ['Partially Received', 'Satisfied', 'Requested'],
-  'Partially Received':    ['Satisfied', 'Requested'],
-  'Satisfied':             ['Partially Received', 'Requested'],
-  'Refused':               ['Partially Received', 'Satisfied', 'Requested'],
+  'Requested':             ['Partially Received', 'Satisfied', 'Needs Review'],
+  'Acknowledged':          ['Partially Received', 'Satisfied', 'Needs Review', 'Requested'],
+  'Partially Received':    ['Satisfied', 'Requested', 'Needs Review'],
+  'Satisfied':             ['Partially Received', 'Requested', 'Needs Review'],
+  'Refused':               ['Partially Received', 'Satisfied', 'Requested', 'Needs Review'],
   'Needs Review':          ['Partially Received', 'Satisfied', 'Requested'],
-  'Follow-up Recommended': ['Partially Received', 'Satisfied', 'Requested'],
+  'Follow-up Recommended': ['Partially Received', 'Satisfied', 'Requested', 'Needs Review'],
 };
 
 // Display label for each state value
 function displayState(s: string) {
-  return s === 'Satisfied' ? 'Verified' : s;
+  if (s === 'Satisfied') return 'Verified';
+  if (s === 'Needs Review') return 'Pending Review';
+  return s;
 }
 
 type FilterKey = 'all' | 'matched' | 'partial' | 'requested' | 'pending_review';
@@ -40,10 +42,11 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 
 function matchesFilter(state: string, filter: FilterKey) {
   switch (filter) {
-    case 'matched':   return state === 'Satisfied';
-    case 'partial':   return state === 'Partially Received';
-    case 'requested': return ['Requested', 'Acknowledged', 'Follow-up Recommended', 'Refused', 'Needs Review'].includes(state);
-    default:          return true;
+    case 'matched':        return state === 'Satisfied';
+    case 'partial':        return state === 'Partially Received';
+    case 'requested':      return ['Requested', 'Acknowledged', 'Follow-up Recommended', 'Refused'].includes(state);
+    case 'pending_review': return state === 'Needs Review';
+    default:               return true;
   }
 }
 
@@ -94,6 +97,7 @@ function StateTag({ state, onChangeState }: { state: string; onChangeState: (s: 
               <span className={`w-2 h-2 rounded-full ${
                 s === 'Satisfied'          ? 'bg-status-satisfied-fg'
                 : s === 'Partially Received' ? 'bg-status-awaiting-fg'
+                : s === 'Needs Review'      ? 'bg-status-overdue-fg'
                 : 'bg-on-surface-variant'}`} />
               {displayState(s)}
             </button>

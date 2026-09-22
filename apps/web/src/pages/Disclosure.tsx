@@ -2,6 +2,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { api, fmtDate } from '../lib/api';
 import { Icon, Pill, Card, Empty, stateTone } from '../lib/ui';
 import type { Page } from '../components/Shell';
+import DropdownMenu from '../components/smoothui/dropdown-menu';
+import { AlertDialog } from '../components/smoothui/dialog';
+import AnimatedTabs from '../components/smoothui/animated-tabs';
+import Skeleton from '../components/smoothui/skeleton-loader';
+import { FadeUp } from '../components/amicro/fade-up';
+import { Button } from '../lib/ui';
 
 const KIND_DESC: Record<string, { label: string; description: string }> = {
   ambiguous_date:          { label: 'Unclear date — needs clarification',  description: 'Ava detected a date reference in this document but could not determine the exact date. Confirm the correct date before the file moves forward.' },
@@ -51,59 +57,55 @@ function matchesFilter(state: string, filter: FilterKey) {
 }
 
 // ─── State tag with inline dropdown ──────────────────────────────────────────
+const STATE_DOT: Record<string, string> = {
+  'Satisfied':          'bg-status-satisfied-fg',
+  'Partially Received': 'bg-status-awaiting-fg',
+  'Needs Review':       'bg-status-overdue-fg',
+};
+
 function StateTag({ state, onChangeState }: { state: string; onChangeState: (s: string) => void }) {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, right: 0 });
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const ref = useRef<HTMLDivElement>(null);
+  const [pending, setPending] = useState<string | null>(null);
   const options = NEXT_STATES[state] ?? [];
 
-  useEffect(() => {
-    function close(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node) &&
-          btnRef.current && !btnRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
-  }, []);
+  // Moving a verified document back out of Verified is the one change worth a second look.
+  const choose = (s: string) => (state === 'Satisfied' ? setPending(s) : onChangeState(s));
 
-  function toggle(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (!open && btnRef.current) {
-      const r = btnRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
-    }
-    setOpen((o) => !o);
-  }
+  const tag = (
+    <button onClick={(e) => e.stopPropagation()} className="flex items-center gap-space-2xs group">
+      <Pill tone={stateTone(state)}>{state === 'Satisfied' ? 'Verified' : state}</Pill>
+      {options.length > 0 && (
+        <Icon name="expand_more" className={`text-[14px] text-on-surface-variant transition-transform ${open ? 'rotate-180' : ''}`} />
+      )}
+    </button>
+  );
 
   return (
-    <div className="relative shrink-0">
-      <button ref={btnRef} onClick={toggle} className="flex items-center gap-space-2xs group">
-        <Pill tone={stateTone(state)}>{state === 'Satisfied' ? 'Verified' : state}</Pill>
-        {options.length > 0 && (
-          <Icon name="expand_more" className={`text-[14px] text-on-surface-variant transition-transform ${open ? 'rotate-180' : ''}`} />
-        )}
-      </button>
-      {open && options.length > 0 && (
-        <div ref={ref}
-          style={{ position: 'fixed', top: pos.top, right: pos.right, zIndex: 9999 }}
-          className="bg-surface-container-lowest border border-surface-border rounded shadow-lg min-w-[180px] flex flex-col py-space-xs">
-          <span className="px-space-md py-space-xs font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider">
-            Change status to
-          </span>
-          {options.map((s) => (
-            <button key={s} onClick={(e) => { e.stopPropagation(); onChangeState(s); setOpen(false); }}
-              className="px-space-md py-space-xs text-left font-body-compact text-body-compact text-on-surface hover:bg-surface-container transition-colors flex items-center gap-space-sm">
-              <span className={`w-2 h-2 rounded-full ${
-                s === 'Satisfied'          ? 'bg-status-satisfied-fg'
-                : s === 'Partially Received' ? 'bg-status-awaiting-fg'
-                : s === 'Needs Review'      ? 'bg-status-overdue-fg'
-                : 'bg-on-surface-variant'}`} />
-              {displayState(s)}
-            </button>
-          ))}
-        </div>
+    <div className="relative shrink-0" onClick={(e) => e.stopPropagation()}>
+      {options.length === 0 ? tag : (
+        <DropdownMenu align="end" open={open} onOpenChange={setOpen}
+          className="min-w-[180px] bg-surface-container-lowest border-surface-border font-body-compact"
+          items={[
+            { key: 'label', label: '', groupLabel: 'Change status to' },
+            ...options.map((s) => ({
+              key: s, label: displayState(s), onSelect: () => choose(s),
+              icon: <span className={`inline-block w-2 h-2 rounded-full ${STATE_DOT[s] ?? 'bg-on-surface-variant'}`} />,
+            })),
+          ]}>
+          {tag}
+        </DropdownMenu>
       )}
+      <AlertDialog open={pending !== null} onOpenChange={(o) => { if (!o) setPending(null); }}
+        title="Move this document out of Verified?"
+        description={`It will be marked ${pending ? displayState(pending) : ''} and counted as outstanding again.`}
+        footer={
+          <div className="flex justify-end gap-space-sm">
+            <Button onClick={() => setPending(null)}>Keep verified</Button>
+            <Button variant="dark" onClick={() => { if (pending) onChangeState(pending); setPending(null); }}>
+              Mark {pending ? displayState(pending) : ''}
+            </Button>
+          </div>
+        } />
     </div>
   );
 }
@@ -113,7 +115,7 @@ function ExpandedItem({ item, state, onBack, onChangeState }: {
   item: any; state: string; onBack: () => void; onChangeState: (s: string) => void;
 }) {
   return (
-    <div className="flex flex-col gap-space-lg p-space-xl">
+    <FadeUp yOffset={10} duration={0.4} className="flex flex-col gap-space-lg p-space-xl">
       <button onClick={onBack}
         className="flex items-center gap-space-xs font-body-compact text-body-compact text-on-surface-variant hover:text-on-surface transition-colors self-start">
         <Icon name="arrow_back" className="text-[18px]" />
@@ -143,7 +145,7 @@ function ExpandedItem({ item, state, onBack, onChangeState }: {
 
 
       </Card>
-    </div>
+    </FadeUp>
   );
 }
 
@@ -244,7 +246,7 @@ export function Disclosure({ setPage }: { setPage?: (p: Page) => void }) {
       <div className="px-space-xl py-space-md bg-surface-container-low border-b border-surface-border flex flex-wrap items-center justify-between gap-space-md">
         <div className="flex items-center gap-space-sm flex-wrap">
           <h1 className="font-headline-matter text-headline-matter text-on-surface font-bold">
-            {matter?.matter_ref ?? '—'}
+            <FadeUp key={matter?.id ?? 'none'} yOffset={6} duration={0.35}>{matter?.matter_ref ?? '—'}</FadeUp>
           </h1>
           {matter?.key_dates?.court_file && (
             <span className="font-code-citation text-code-citation px-space-xs py-space-2xs bg-surface-container rounded text-on-surface border border-surface-border">
@@ -303,27 +305,17 @@ export function Disclosure({ setPage }: { setPage?: (p: Page) => void }) {
           ) : (
             <div className="flex flex-col gap-space-lg p-space-xl">
               {/* filter chips */}
-              <div className="flex flex-wrap gap-space-xs">
-                {FILTERS.map(({ key, label }) => (
-                  <button key={key} onClick={() => setFilter(key)}
-                    className={`px-space-md py-space-xs rounded-full border font-body-compact text-body-compact transition-colors flex items-center gap-space-xs ${
-                      filter === key
-                        ? 'bg-primary text-on-primary border-primary'
-                        : 'bg-surface-container border-surface-border text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
-                    }`}>
-                    {label}
-                    <span className={`text-[11px] font-bold ${filter === key ? 'text-on-primary/70' : 'text-on-surface-variant'}`}>
-                      {counts[key]}
-                    </span>
-                  </button>
-                ))}
+              <div className="overflow-x-auto">
+                <AnimatedTabs variant="pill" activeTab={filter} onChange={(k) => setFilter(k as FilterKey)} layoutId="disclosure-filter"
+                  className="bg-surface-container border border-surface-border whitespace-nowrap flex-wrap rounded-xl font-body-compact"
+                  tabs={FILTERS.map(({ key, label }) => ({ id: key, label: `${label} · ${counts[key]}` }))} />
               </div>
 
               {/* document list */}
               {!register && (
                 <div className="flex flex-col gap-space-sm">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-16 bg-surface-container animate-pulse rounded" />
+                    <Skeleton key={i} className="h-16 rounded" />
                   ))}
                 </div>
               )}
@@ -357,10 +349,11 @@ export function Disclosure({ setPage }: { setPage?: (p: Page) => void }) {
 
               {filter !== 'pending_review' && register && shown.length > 0 && (
                 <div className="flex flex-col divide-y divide-surface-border border border-surface-border rounded-lg overflow-hidden">
-                  {shown.map((it: any) => {
+                  {shown.map((it: any, i: number) => {
                     const state = effectiveState(it);
                     return (
-                      <div key={it.id}
+                      <FadeUp key={`${filter}-${it.id}`} yOffset={8} duration={0.35} delay={Math.min(i, 12) * 0.03}>
+                      <div
                         className="bg-surface-container-lowest hover:bg-surface-container transition-colors flex items-start justify-between gap-space-md p-space-md cursor-pointer"
                         onClick={() => setExpandedId(it.id)}>
                         <span className="flex flex-col min-w-0 flex-1">
@@ -380,6 +373,7 @@ export function Disclosure({ setPage }: { setPage?: (p: Page) => void }) {
                           onChangeState={(s) => { changeState(it.id, s); }}
                         />
                       </div>
+                      </FadeUp>
                     );
                   })}
                 </div>

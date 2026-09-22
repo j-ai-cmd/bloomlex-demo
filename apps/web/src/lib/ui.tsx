@@ -1,7 +1,7 @@
 import React from 'react';
 
 export const Icon = ({ name, className = '' }: { name: string; className?: string }) => (
-  <span className={`material-symbols-outlined ${className}`}>{name}</span>
+  <span aria-hidden="true" className={`material-symbols-outlined ${className}`}>{name}</span>
 );
 
 const TONES: Record<string, string> = {
@@ -38,8 +38,17 @@ export const Button = ({ variant = 'ghost', className = '', ...p }: any) => {
   return <button {...p} className={`px-space-md py-space-xs rounded border font-body-strong text-body-strong transition-colors flex items-center gap-space-xs ${v} ${className}`} />;
 };
 
-export const Card = ({ className = '', children, onClick, ...rest }: any) => (
+/** Enter/Space on a focusable non-button element, but only when it is the target itself. */
+export const activateOnKey = (fn: (e: any) => void) => (e: React.KeyboardEvent) => {
+  if (e.target !== e.currentTarget) return;
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(e); }
+};
+
+/** `nestedControls`: the card holds its own buttons, so it stays a plain mouse target
+ *  and a real <button> inside it is the keyboard path (no button-in-button). */
+export const Card = ({ className = '', children, onClick, nestedControls, ...rest }: any) => (
   <div {...rest} onClick={onClick}
+    {...(onClick && !nestedControls ? { role: 'button', tabIndex: 0, onKeyDown: activateOnKey(onClick) } : {})}
     className={`bg-surface-container-lowest border border-surface-border rounded shadow-sm ${className}`}>
     {children}
   </div>

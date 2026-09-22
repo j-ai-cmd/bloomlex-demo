@@ -71,7 +71,24 @@ export default {
         "surface-dim": "#dbd9dc",
         "secondary": "#2563eb",
         "accent": "#3FAF78",
-        "accent-ink": "#001229"
+        "accent-ink": "#001229",
+        /* shadcn/smoothui semantic tokens, pointed at the Stitch values above */
+        "brand": "#3FAF78",
+        "destructive": "#ba1a1a",
+        "destructive-foreground": "#ffffff",
+        "foreground": "#1b1c1e",
+        "muted": "#efedf0",
+        "muted-foreground": "#44474d",
+        "border": "#E2E8F0",
+        "input": "#E2E8F0",
+        "ring": "#0f2744",
+        "popover": "#ffffff",
+        "popover-foreground": "#1b1c1e",
+        "card": "#ffffff",
+        "card-foreground": "#1b1c1e",
+        "primary-foreground": "#ffffff",
+        "secondary-foreground": "#ffffff",
+        "accent-foreground": "#001229"
       },
       "borderRadius": {
         "DEFAULT": "0.125rem",
@@ -163,17 +180,17 @@ export default {
           }
         ],
         "caption-meta": [
-          "11px",
+          "12px",
           {
-            "lineHeight": "14px",
+            "lineHeight": "16px",
             "letterSpacing": "0.01em",
             "fontWeight": "500"
           }
         ],
         "code-hash": [
-          "11px",
+          "12px",
           {
-            "lineHeight": "14px",
+            "lineHeight": "16px",
             "letterSpacing": "0",
             "fontWeight": "400"
           }
@@ -227,9 +244,9 @@ export default {
           }
         ],
         "code-timestamp": [
-          "11px",
+          "12px",
           {
-            "lineHeight": "14px",
+            "lineHeight": "16px",
             "letterSpacing": "0.02em",
             "fontWeight": "500"
           }

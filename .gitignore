@@ -6,3 +6,4 @@ fixtures/uploads/
 .env
 *.DS_Store
 public/
+.pglite/

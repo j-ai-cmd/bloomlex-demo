@@ -1,6 +1,7 @@
 import React from 'react';
 import { Icon } from '../lib/ui';
 import { Logo } from './Logo';
+import NotificationBadge from './smoothui/notification-badge';
 
 export type Page = 'calendar' | 'intake' | 'disclosure' | 'review';
 
@@ -8,7 +9,7 @@ export function Shell({ page, setPage, meta, counts, children }: {
   page: Page; setPage: (p: Page) => void; meta: any;
   counts: { disclosure: number; review: number }; children: React.ReactNode;
 }) {
-  const Item = ({ id, icon, label, badge, badgeTone }: any) => {
+  const Item = ({ id, icon, label, badge, badgeTone, ping }: any) => {
     const active = page === id;
     return (
       <button onClick={() => setPage(id)}
@@ -19,9 +20,8 @@ export function Shell({ page, setPage, meta, counts, children }: {
           <Icon name={icon} className="text-[18px]" />
           <span className="font-body-compact text-body-compact">{label}</span>
         </span>
-        {badge != null && badge !== 0 && (
-          <span className={`px-space-xs py-space-2xs rounded font-code-timestamp text-caption-meta font-bold ${badgeTone}`}>{badge}</span>
-        )}
+        <NotificationBadge variant="count" count={badge ?? 0} ping={ping} children={<></>}
+          className={`static h-auto w-auto min-w-0 px-space-xs py-space-2xs rounded font-code-timestamp text-caption-meta font-bold ${badgeTone}`} />
       </button>
     );
   };
@@ -43,7 +43,7 @@ export function Shell({ page, setPage, meta, counts, children }: {
               <Item id="disclosure"  icon="security"       label="Matters"
                     badge={counts.disclosure || null} badgeTone="bg-secondary-fixed text-on-secondary-fixed" />
               <Item id="review"      icon="fact_check"     label="Pending Review"
-                    badge={counts.review || null} badgeTone="bg-accent text-accent-ink" />
+                    badge={counts.review || null} badgeTone="bg-accent text-accent-ink" ping />
             </nav>
           </div>
         </div>

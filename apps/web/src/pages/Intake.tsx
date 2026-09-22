@@ -1,6 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
 import { Icon, Button, Card } from '../lib/ui';
+import AnimatedFileUpload from '../components/smoothui/animated-file-upload';
+import AITaskList from '../components/smoothui/ai-task-list';
+import Select from '../components/smoothui/select';
+import { MorphLoader } from '../components/amicro/morph-loader';
+import { FadeUp } from '../components/amicro/fade-up';
 import { markDisclosureRan } from './Calendar';
 import type { Page } from '../components/Shell';
 
@@ -57,42 +62,23 @@ function ProcessingModal({ filename, step }: { filename: string; step: number })
     <div className="fixed inset-0 bg-surface/80 backdrop-blur-sm z-50 flex items-center justify-center p-space-xl">
       <div className="bg-surface-container-lowest border border-surface-border rounded-xl shadow-2xl p-space-xl flex flex-col items-center gap-space-xl w-full max-w-md">
         <div className="flex flex-col items-center gap-space-sm text-center">
-          <div className={`w-12 h-12 rounded-full border-2 border-surface-border flex items-center justify-center ${
-            step >= STEPS.length
-              ? 'bg-status-satisfied-bg border-status-satisfied-border'
-              : 'border-t-primary animate-spin'}`}>
-            {step >= STEPS.length && <Icon name="check" className="text-[22px] text-status-satisfied-fg" />}
-          </div>
+          {step >= STEPS.length ? (
+            <div className="w-12 h-12 rounded-full border-2 bg-status-satisfied-bg border-status-satisfied-border flex items-center justify-center">
+              <Icon name="check" className="text-[22px] text-status-satisfied-fg" />
+            </div>
+          ) : (
+            <MorphLoader size={36} color="bg-primary" className="m-1.5" />
+          )}
           <span className="font-headline-matter text-subhead-lead font-bold text-on-surface">Processing package</span>
           <span className="font-code-timestamp text-caption-meta text-on-surface-variant">{filename}</span>
         </div>
 
-        <div className="w-full flex flex-col gap-space-md">
-          {STEPS.map(({ label, sub }, i) => {
-            const done   = i < step;
-            const active = i === step;
-            return (
-              <div key={i} className="flex items-center gap-space-md">
-                <span className={`w-7 h-7 rounded-full border flex items-center justify-center shrink-0 ${
-                  done   ? 'bg-status-satisfied-bg border-status-satisfied-border'
-                         : active ? 'border-primary bg-surface-container'
-                         : 'border-surface-border bg-surface-container'}`}>
-                  {done   && <Icon name="check" className="text-[14px] text-status-satisfied-fg" />}
-                  {active && <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />}
-                </span>
-                <div className="flex flex-col min-w-0">
-                  <span className={`font-body-compact text-body-compact ${
-                    done ? 'text-on-surface' : active ? 'text-on-surface font-semibold' : 'text-on-surface-variant'}`}>
-                    {label}
-                  </span>
-                  {active && sub && (
-                    <span className="font-code-timestamp text-caption-meta text-on-surface-variant">{sub}</span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <AITaskList className="w-full" label="Pipeline"
+          tasks={STEPS.map(({ label, sub }, i) => ({
+            id: String(i), label,
+            note: i === step ? sub : undefined,
+            status: i < step ? 'done' : i === step ? 'running' : 'pending',
+          }))} />
       </div>
     </div>
   );
@@ -173,8 +159,6 @@ export function Intake({ onChanged, setPage }: { onChanged: () => void; setPage:
   const [files, setFiles]       = useState<FileRecord[] | null>(null);
   const [anomalies, setAnomalies] = useState(0);
   const [error, setError]       = useState('');
-  const [dragging, setDragging] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   // Restore saved state on mount
   useEffect(() => {
@@ -212,7 +196,7 @@ export function Intake({ onChanged, setPage }: { onChanged: () => void; setPage:
   }
 
   // ── Real upload ───────────────────────────────────────────────────────────
-  async function upload(fileList: FileList | null) {
+  async function upload(fileList: FileList | File[] | null) {
     if (!fileList?.length) return;
     const name = Array.from(fileList).map((f) => f.name).join(', ');
     setError(''); setFiles(null); setAnomalies(0);
@@ -271,37 +255,23 @@ export function Intake({ onChanged, setPage }: { onChanged: () => void; setPage:
         {/* matter selector */}
         <div className="flex flex-wrap items-center gap-space-sm">
           <span className="font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider">Matter</span>
-          <select value={matterRef} onChange={(e) => handleMatterChange(e.target.value)}
-            className="px-space-md py-space-xs bg-surface-container-lowest border border-surface-border rounded font-body-strong text-body-strong text-on-surface">
-            {matters.map((m) => <option key={m.id} value={m.matter_ref}>{m.matter_ref}</option>)}
-            {matters.length === 0 && <option value="R. v. Okafor">R. v. Okafor</option>}
-          </select>
+          <div className="w-64"><Select size="sm" aria-label="Matter" value={matterRef} onValueChange={handleMatterChange}
+            className="min-w-[14rem] bg-surface-container-lowest border-surface-border font-body-strong text-body-strong text-on-surface"
+            options={matters.length ? matters.map((m) => ({ value: m.matter_ref, label: m.matter_ref }))
+                                    : [{ value: 'R. v. Okafor', label: 'R. v. Okafor' }]} /></div>
         </div>
 
         {/* drop zone */}
         {!files && !processing && (
-          <div
-            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={(e) => { e.preventDefault(); setDragging(false); upload(e.dataTransfer.files); }}
-            className={`border-2 border-dashed rounded-xl p-space-4xl flex flex-col items-center gap-space-md transition-colors ${
-              dragging ? 'border-accent bg-accent/5' : 'border-surface-border bg-surface-container-lowest'}`}>
-            <span className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center">
-              <Icon name="cloud_upload" className="text-[28px] text-on-surface-variant" />
-            </span>
+          <div className="border border-surface-border rounded-xl p-space-2xl bg-surface-container-lowest flex flex-col items-center gap-space-md">
             <span className="font-headline-matter text-subhead-lead font-bold text-on-surface">
               Drop the disclosure package here
             </span>
-            <span className="font-body-compact text-body-compact text-on-surface-variant">
-              PDF or any file format.
-            </span>
-            <input ref={fileRef} type="file" multiple hidden onChange={(e) => upload(e.target.files)} />
-            <div className="flex flex-wrap items-center gap-space-sm">
-              <Button variant="dark" onClick={() => fileRef.current?.click()}>Browse files</Button>
-              <Button variant="primary" onClick={runDemo}>
-                <Icon name="play_arrow" className="text-[16px]" /> Try a demo package
-              </Button>
-            </div>
+            <AnimatedFileUpload multiple onFilesSelected={(fs) => { if (fs.length) upload(fs); }}
+              className="font-body-compact [&>div[role=button]]:py-space-3xl" />
+            <Button variant="primary" onClick={runDemo}>
+              <Icon name="play_arrow" className="text-[16px]" /> Try a demo package
+            </Button>
           </div>
         )}
 
@@ -324,8 +294,9 @@ export function Intake({ onChanged, setPage }: { onChanged: () => void; setPage:
               </Button>
             </div>
 
-            {files.map((f) => (
-              <FileCard key={f.id} f={f}
+            {files.map((f, i) => (
+              <FadeUp key={f.id} delay={i * 0.08} yOffset={14} duration={0.5}>
+              <FileCard f={f}
                 onReview={f.status === 'flagged' ? () => {
                   try { sessionStorage.setItem('bloomlex_nav_intent', JSON.stringify({ page: 'review', filename: f.filename })); } catch {}
                   setPage('review');
@@ -334,6 +305,7 @@ export function Intake({ onChanged, setPage }: { onChanged: () => void; setPage:
                   try { sessionStorage.setItem('bloomlex_nav_intent', JSON.stringify({ page: 'disclosure', matterRef: matterRef, itemSeq: f.matchedSeq })); } catch {}
                   setPage('disclosure');
                 } : undefined} />
+              </FadeUp>
             ))}
           </div>
         )}

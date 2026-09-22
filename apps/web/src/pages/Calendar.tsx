@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { fmtLong } from '../lib/api';
 import { Icon, Pill, Button, Empty } from '../lib/ui';
+import AnimatedTabs from '../components/smoothui/animated-tabs';
+import AnimatedTooltip from '../components/smoothui/animated-tooltip';
+import { FadeUp } from '../components/amicro/fade-up';
 
 const CATEGORY: Record<string, { label: string; tone: string; bar: string }> = {
   court:             { label: 'COURT',             tone: 'overdue',  bar: 'border-l-error' },
@@ -177,24 +180,18 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
             <div className="flex items-center gap-space-xs">
               <Button onClick={() => setDay(shiftDay(day, -1))}><Icon name="chevron_left" className="text-[18px]" /></Button>
               <Button onClick={() => setDay(shiftDay(day, 1))}><Icon name="chevron_right" className="text-[18px]" /></Button>
-              <h1 className="font-headline-matter text-headline-matter font-bold text-on-surface ml-space-xs tracking-tight">{fmtLong(day)}</h1>
+              <h1 className="font-headline-matter text-headline-matter font-bold text-on-surface ml-space-xs tracking-tight"><FadeUp key={day} yOffset={6} duration={0.4}>{fmtLong(day)}</FadeUp></h1>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-space-xs overflow-x-auto py-space-2xs">
-          <button onClick={() => setFilter('all')}
-            className={`px-space-md py-space-xs rounded font-headline-matter font-semibold text-caption-meta border ${
-              filter === 'all' ? 'bg-accent text-accent-ink border-accent' : 'bg-surface-container-low border-surface-border text-on-surface-variant'}`}>
-            All · {onDay.length}
-          </button>
-          {Object.entries(CATEGORY).map(([k, v]) => (
-            <button key={k} onClick={() => setFilter(k)}
-              className={`px-space-md py-space-xs rounded font-body-default text-caption-meta border flex items-center gap-space-xs ${
-                filter === k ? 'bg-primary text-on-primary border-primary' : 'bg-surface-container-low border-surface-border text-on-surface-variant'}`}>
-              {v.label.toLowerCase()} <span className="font-code-timestamp text-[10px]">{counts[k]}</span>
-            </button>
-          ))}
+        <div className="overflow-x-auto py-space-2xs">
+          <AnimatedTabs variant="pill" activeTab={filter} onChange={setFilter} layoutId="calendar-filter"
+            className="bg-surface-container-low border border-surface-border whitespace-nowrap font-body-default"
+            tabs={[
+              { id: 'all', label: `All · ${onDay.length}` },
+              ...Object.entries(CATEGORY).map(([k, v]) => ({ id: k, label: `${v.label.toLowerCase()} · ${counts[k]}` })),
+            ]} />
         </div>
       </div>
 
@@ -207,11 +204,12 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
             <Empty>No deadlines on this day. Use the arrows to navigate to a day with items.</Empty>
           )}
 
-          {shown.map((c) => {
+          {shown.map((c, i) => {
             const cat = CATEGORY[c.category] ?? CATEGORY.deadline;
             const isUrgent = urgent.has(c.id);
             return (
-              <div key={c.id}
+              <FadeUp key={`${day}-${c.id}`} yOffset={12} duration={0.45} delay={i * 0.05}>
+              <div
                 className={`text-left bg-surface-container-lowest border-l-4 ${cat.bar} rounded shadow-sm hover:shadow-md transition-all ${
                   isUrgent ? 'border border-error/40 bg-red-50/30' : 'border border-surface-border'}`}>
                 <div className="p-space-lg flex flex-col gap-space-sm">
@@ -228,7 +226,10 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
                         className="text-left">
                         <h2 className="font-headline-matter text-subhead-lead font-bold text-on-surface hover:text-primary transition-colors">{c.action_text}</h2>
                       </button>
-                      <p className="font-body-default text-body-compact text-on-surface-variant line-clamp-1 italic">"{c.verbatim_text}"</p>
+                      <AnimatedTooltip placement="bottom" delay={250} className="max-w-sm"
+                        content={<span className="font-code-timestamp text-caption-meta">{Math.round(c.confidence * 100)}% confidence · via {c.channel}</span>}>
+                        <p className="font-body-default text-body-compact text-on-surface-variant line-clamp-1 italic">"{c.verbatim_text}"</p>
+                      </AnimatedTooltip>
                     </div>
                     <div className="flex flex-col items-end gap-space-sm shrink-0">
                       <button
@@ -247,15 +248,16 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
                   </div>
 
                   {selected?.id === c.id && (
-                    <div className="border-t border-surface-border pt-space-sm flex flex-col gap-space-xs">
+                    <FadeUp yOffset={8} duration={0.35} className="border-t border-surface-border pt-space-sm flex flex-col gap-space-xs">
                       <span className="font-caption-meta text-caption-meta text-on-surface-variant uppercase tracking-wider">What Ava heard</span>
                       <p className="font-code-citation text-caption-meta text-on-surface-variant italic bg-surface-container-low border border-surface-border p-space-xs rounded">
                         "{c.verbatim_text}"
                       </p>
-                    </div>
+                    </FadeUp>
                   )}
                 </div>
               </div>
+              </FadeUp>
             );
           })}
         </div>

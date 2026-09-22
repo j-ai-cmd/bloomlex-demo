@@ -60,7 +60,8 @@ const INTAKE_KEY = 'bloomlex_intake_state';
 function ProcessingModal({ filename, step }: { filename: string; step: number }) {
   return (
     <div className="fixed inset-0 bg-surface/80 backdrop-blur-sm z-50 flex items-center justify-center p-space-xl">
-      <div className="bg-surface-container-lowest border border-surface-border rounded-xl shadow-2xl p-space-xl flex flex-col items-center gap-space-xl w-full max-w-md">
+      <div role="dialog" aria-modal="true" aria-label="Processing package" aria-busy={step < STEPS.length}
+        className="bg-surface-container-lowest border border-surface-border rounded-xl shadow-2xl p-space-xl flex flex-col items-center gap-space-xl w-full max-w-md">
         <div className="flex flex-col items-center gap-space-sm text-center">
           {step >= STEPS.length ? (
             <div className="w-12 h-12 rounded-full border-2 bg-status-satisfied-bg border-status-satisfied-border flex items-center justify-center">
@@ -277,7 +278,7 @@ export function Intake({ onChanged, setPage }: { onChanged: () => void; setPage:
 
         {/* error */}
         {error && (
-          <div className="p-space-md bg-status-overdue-bg border border-status-overdue-border rounded font-body-compact text-body-compact text-status-overdue-fg">
+          <div role="alert" className="p-space-md bg-status-overdue-bg border border-status-overdue-border rounded font-body-compact text-body-compact text-status-overdue-fg">
             {error}
           </div>
         )}

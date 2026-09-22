@@ -72,7 +72,8 @@ function StateTag({ state, onChangeState }: { state: string; onChangeState: (s: 
   const choose = (s: string) => (state === 'Satisfied' ? setPending(s) : onChangeState(s));
 
   const tag = (
-    <button onClick={(e) => e.stopPropagation()} className="flex items-center gap-space-2xs group">
+    <button onClick={(e) => e.stopPropagation()} aria-label={`Status: ${displayState(state)}${options.length ? '. Change status' : ''}`}
+      className="flex items-center gap-space-2xs group">
       <Pill tone={stateTone(state)}>{state === 'Satisfied' ? 'Verified' : state}</Pill>
       {options.length > 0 && (
         <Icon name="expand_more" className={`text-[14px] text-on-surface-variant transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -360,7 +361,8 @@ export function Disclosure({ setPage }: { setPage?: (p: Page) => void }) {
                           <span className="font-caption-meta text-caption-meta text-on-surface-variant">
                             ITEM #{String(it.seq).padStart(2, '0')}
                           </span>
-                          <span className="font-body-strong text-body-strong text-on-surface">{it.description}</span>
+                          <button onClick={(e) => { e.stopPropagation(); setExpandedId(it.id); }}
+                            className="text-left font-body-strong text-body-strong text-on-surface">{it.description}</button>
                           <span className="font-caption-meta text-caption-meta text-on-surface-variant mt-space-2xs">
                             Requested {fmtDate(it.first_requested_at)}
                             {it.clock?.age_calendar_days ? ` · ${it.clock.age_calendar_days} days` : ''}

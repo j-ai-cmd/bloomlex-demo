@@ -9,10 +9,11 @@ export function Shell({ page, setPage, meta, counts, children }: {
   page: Page; setPage: (p: Page) => void; meta: any;
   counts: { disclosure: number; review: number }; children: React.ReactNode;
 }) {
-  const Item = ({ id, icon, label, badge, badgeTone, ping }: any) => {
+  const Item = ({ id, icon, label, badge, badgeTone, ping, badgeHint }: any) => {
     const active = page === id;
     return (
-      <button onClick={() => setPage(id)}
+      <button onClick={() => setPage(id)} aria-current={active ? 'page' : undefined}
+        aria-label={badge ? `${label}, ${badge} ${badgeHint}` : undefined}
         className={`w-full flex items-center justify-between px-space-md py-space-sm rounded transition-colors ${
           active ? 'bg-primary text-on-primary font-body-strong shadow-sm border-l-[3px] border-accent'
                  : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'}`}>
@@ -37,13 +38,13 @@ export function Shell({ page, setPage, meta, counts, children }: {
             </span>
           </div>
           <div className="px-space-lg py-space-xs">
-            <nav className="flex flex-col gap-space-2xs pt-space-xs">
+            <nav aria-label="Main" className="flex flex-col gap-space-2xs pt-space-xs">
               <Item id="calendar"    icon="calendar_today" label="Deadline Calendar" />
               <Item id="intake"      icon="cloud_upload"   label="Upload Disclosure" />
               <Item id="disclosure"  icon="security"       label="Matters"
-                    badge={counts.disclosure || null} badgeTone="bg-secondary-fixed text-on-secondary-fixed" />
+                    badge={counts.disclosure || null} badgeTone="bg-secondary-fixed text-on-secondary-fixed" badgeHint="outstanding" />
               <Item id="review"      icon="fact_check"     label="Pending Review"
-                    badge={counts.review || null} badgeTone="bg-accent text-accent-ink" ping />
+                    badge={counts.review || null} badgeTone="bg-accent text-accent-ink" badgeHint="waiting for review" ping />
             </nav>
           </div>
         </div>

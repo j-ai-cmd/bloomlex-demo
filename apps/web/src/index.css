@@ -13,6 +13,13 @@
   }
 }
 ::-webkit-scrollbar { display: none; }
+
+/* Keyboard focus: visible ring for every control; mouse clicks stay unchanged. */
+:focus-visible { outline: 2px solid #0f2744; outline-offset: 2px; border-radius: 0.25rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse, .animate-spin, .animate-ping { animation: none !important; }
+}
 .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal;
   line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap;
   word-wrap: normal; direction: ltr; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }

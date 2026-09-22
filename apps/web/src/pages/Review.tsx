@@ -257,11 +257,12 @@ export function Review({ onChanged }: { onChanged: () => void }) {
       <div className="flex flex-col gap-space-md">
         {pendingIntake.map((f, i) => (
           <FadeUp key={f.id} yOffset={12} duration={0.45} delay={i * 0.05}>
-          <Card className="p-space-lg flex flex-col gap-space-md cursor-pointer hover:border-accent transition-colors"
+          <Card nestedControls className="p-space-lg flex flex-col gap-space-md cursor-pointer hover:border-accent transition-colors"
             onClick={() => setExpandedIntakeId(f.id)}>
             <div className="flex items-start justify-between gap-space-md">
               <div className="flex flex-col gap-space-2xs min-w-0">
-                <span className="font-headline-matter font-bold text-body-strong text-on-surface">{f.docType ?? 'Unidentified document'}</span>
+                <button onClick={(e) => { e.stopPropagation(); setExpandedIntakeId(f.id); }}
+                  className="text-left font-headline-matter font-bold text-body-strong text-on-surface">{f.docType ?? 'Unidentified document'}</button>
                 <span className="font-code-timestamp text-caption-meta text-on-surface-variant">{f.filename}{f.pages ? ` · ${f.pages} pages` : ''}</span>
               </div>
               <Icon name="chevron_right" className="text-[20px] text-on-surface-variant shrink-0" />
@@ -279,11 +280,12 @@ export function Review({ onChanged }: { onChanged: () => void }) {
           const meta = kindMeta(r.kind);
           return (
             <FadeUp key={r.id} yOffset={12} duration={0.45} delay={Math.min(pendingIntake.length + i, 10) * 0.05}>
-            <Card className="p-space-lg flex flex-col gap-space-md cursor-pointer hover:border-accent transition-colors"
+            <Card nestedControls className="p-space-lg flex flex-col gap-space-md cursor-pointer hover:border-accent transition-colors"
               onClick={() => setExpandedItemId(r.id)}>
               <div className="flex items-start justify-between gap-space-md">
                 <div className="flex flex-col gap-space-2xs min-w-0">
-                  <span className="font-headline-matter font-bold text-body-strong text-on-surface">{r.title}</span>
+                  <button onClick={(e) => { e.stopPropagation(); setExpandedItemId(r.id); }}
+                    className="text-left font-headline-matter font-bold text-body-strong text-on-surface">{r.title}</button>
                   {r.matter_ref && <span className="font-code-timestamp text-caption-meta text-on-surface-variant">{r.matter_ref}</span>}
                 </div>
                 <Icon name="chevron_right" className="text-[20px] text-on-surface-variant shrink-0" />

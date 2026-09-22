@@ -178,8 +178,8 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
         <div className="flex flex-wrap items-center justify-between gap-space-md">
           <div className="flex items-center gap-space-lg">
             <div className="flex items-center gap-space-xs">
-              <Button onClick={() => setDay(shiftDay(day, -1))}><Icon name="chevron_left" className="text-[18px]" /></Button>
-              <Button onClick={() => setDay(shiftDay(day, 1))}><Icon name="chevron_right" className="text-[18px]" /></Button>
+              <Button aria-label="Previous day" onClick={() => setDay(shiftDay(day, -1))}><Icon name="chevron_left" className="text-[18px]" /></Button>
+              <Button aria-label="Next day" onClick={() => setDay(shiftDay(day, 1))}><Icon name="chevron_right" className="text-[18px]" /></Button>
               <h1 className="font-headline-matter text-headline-matter font-bold text-on-surface ml-space-xs tracking-tight"><FadeUp key={day} yOffset={6} duration={0.4}>{fmtLong(day)}</FadeUp></h1>
             </div>
           </div>
@@ -223,16 +223,17 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
                         {c.fromDisclosure && <Pill tone="satisfied">From disclosure upload</Pill>}
                       </div>
                       <button onClick={() => setSelected(c === selected ? null : c)}
-                        className="text-left">
+                        aria-expanded={selected?.id === c.id} className="text-left">
                         <h2 className="font-headline-matter text-subhead-lead font-bold text-on-surface hover:text-primary transition-colors">{c.action_text}</h2>
                       </button>
                       <AnimatedTooltip placement="bottom" delay={250} className="max-w-sm"
                         content={<span className="font-code-timestamp text-caption-meta">{Math.round(c.confidence * 100)}% confidence · via {c.channel}</span>}>
-                        <p className="font-body-default text-body-compact text-on-surface-variant line-clamp-1 italic">"{c.verbatim_text}"</p>
+                        <p tabIndex={0} className="font-body-default text-body-compact text-on-surface-variant line-clamp-1 italic">"{c.verbatim_text}"</p>
                       </AnimatedTooltip>
                     </div>
                     <div className="flex flex-col items-end gap-space-sm shrink-0">
                       <button
+                        aria-pressed={isUrgent}
                         onClick={() => setUrgent((prev) => { const n = new Set(prev); isUrgent ? n.delete(c.id) : n.add(c.id); return n; })}
                         className={`flex items-center gap-space-2xs px-space-sm py-space-2xs rounded-full border font-caption-meta text-[11px] font-semibold transition-all ${
                           isUrgent
@@ -274,7 +275,7 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
                 const isToday = date === today;
                 const isSel = date === day;
                 return (
-                  <button key={date} onClick={() => setDay(date)}
+                  <button key={date} onClick={() => setDay(date)} aria-pressed={isSel}
                     className={`p-space-sm rounded border flex items-center justify-between gap-space-sm text-left transition-all ${
                       isSel ? 'bg-primary/10 border-primary' : 'bg-surface-container-lowest border-surface-border hover:border-primary/40'}`}>
                     <span className="flex items-center gap-space-xs">

@@ -12,7 +12,12 @@
   .dark { --amber: oklch(0.8 0.15 75); --amber-fg: oklch(0.2 0 0); --amber-hover: oklch(0.85 0.14 72); --blue: oklch(0.66 0.18 256); --blue-fg: #fff; --blue-hover: oklch(0.72 0.16 256); --green: oklch(0.73 0.16 152); --green-fg: oklch(0.2 0 0); --green-hover: oklch(0.79 0.15 152); --smooth-50: oklch(0.2 0 0); --smooth-100: oklch(0.235 0 0); --smooth-200: oklch(0.275 0 0); --smooth-300: oklch(0.315 0 0); --smooth-400: oklch(0.36 0 0); --smooth-500: oklch(0.41 0 0); --smooth-600: oklch(0.47 0 0); --smooth-700: oklch(0.55 0 0); --smooth-800: oklch(0.66 0 0); --smooth-900: oklch(0.74 0 0); --smooth-950: oklch(0.85 0 0); --smooth-1000: oklch(0.96 0 0);
   }
 }
-::-webkit-scrollbar { display: none; }
+/* Thin scrollbars in the Stitch palette, so scrollable areas stay discoverable. */
+* { scrollbar-width: thin; scrollbar-color: #c4c6ce transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #c4c6ce; border-radius: 9999px; border: 2px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background-color: #74777e; }
 
 /* Keyboard focus: visible ring for every control; mouse clicks stay unchanged. */
 :focus-visible { outline: 2px solid #0f2744; outline-offset: 2px; border-radius: 0.25rem; }

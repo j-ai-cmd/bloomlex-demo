@@ -196,7 +196,7 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
       </div>
 
       {/* ── body ────────────────────────────────────────────────────────── */}
-      <div className="relative flex flex-col lg:flex-row w-full min-h-[calc(100vh-14rem)]">
+      <div className="relative flex flex-col lg:flex-row w-full lg:min-h-[calc(100vh-14rem)]">
 
         {/* main list */}
         <div className="flex-1 p-space-xl flex flex-col gap-space-md">
@@ -235,14 +235,14 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
                       <button
                         aria-pressed={isUrgent}
                         onClick={() => setUrgent((prev) => { const n = new Set(prev); isUrgent ? n.delete(c.id) : n.add(c.id); return n; })}
-                        className={`flex items-center gap-space-2xs px-space-sm py-space-2xs rounded-full border font-caption-meta text-[11px] font-semibold transition-all ${
+                        className={`flex items-center gap-space-2xs px-space-sm py-space-2xs rounded-full border font-caption-meta text-caption-meta font-semibold transition-all ${
                           isUrgent
                             ? 'bg-error text-white border-error shadow-sm'
                             : 'border-surface-border text-on-surface-variant hover:border-error/60 hover:text-error bg-transparent'}`}>
                         <Icon name={isUrgent ? 'bolt' : 'flag'} className="text-[13px]" />
                         {isUrgent ? 'Urgent' : 'Mark urgent'}
                       </button>
-                      <span className="px-space-xs py-space-2xs bg-surface-container-low border border-surface-border text-on-surface-variant font-code-timestamp text-[10px] rounded">
+                      <span className="px-space-xs py-space-2xs bg-surface-container-low border border-surface-border text-on-surface-variant font-code-timestamp text-caption-meta rounded">
                         {c.channel}
                       </span>
                     </div>
@@ -264,7 +264,7 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
         </div>
 
         {/* sidebar — month at a glance */}
-        <div className="w-full lg:w-inspector-width bg-surface-container-low border-l border-surface-border p-space-lg flex flex-col" style={{minHeight: 'calc(100vh - 14rem)'}}>
+        <div className="w-full lg:w-inspector-width bg-surface-container-low border-t lg:border-t-0 lg:border-l border-surface-border p-space-lg flex flex-col lg:min-h-[calc(100vh-14rem)]">
           <div className="flex flex-col gap-space-sm flex-1 overflow-hidden">
             <span className="font-headline-matter font-bold text-xs uppercase tracking-wider text-on-surface">September 2026</span>
             <div className="flex flex-col gap-space-xs flex-1 overflow-y-auto">
@@ -283,7 +283,7 @@ export function Calendar({ onChanged }: { onChanged: () => void }) {
                       {hasDisclosure && <Icon name="upload_file" className="text-[13px] text-status-satisfied-fg" />}
                       <span className="font-headline-matter font-semibold text-body-compact text-on-surface">
                         {new Date(`${date}T12:00:00Z`).toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' })}
-                        {isToday && <span className="ml-space-xs text-primary text-[10px] font-code-timestamp"> TODAY</span>}
+                        {isToday && <span className="ml-space-xs text-primary text-caption-meta font-code-timestamp"> TODAY</span>}
                       </span>
                     </span>
                     <Pill tone={count > 2 ? 'overdue' : 'neutral'}>{count}</Pill>

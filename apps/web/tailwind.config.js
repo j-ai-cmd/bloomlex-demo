@@ -180,17 +180,17 @@ export default {
           }
         ],
         "caption-meta": [
-          "11px",
+          "12px",
           {
-            "lineHeight": "14px",
+            "lineHeight": "16px",
             "letterSpacing": "0.01em",
             "fontWeight": "500"
           }
         ],
         "code-hash": [
-          "11px",
+          "12px",
           {
-            "lineHeight": "14px",
+            "lineHeight": "16px",
             "letterSpacing": "0",
             "fontWeight": "400"
           }
@@ -244,9 +244,9 @@ export default {
           }
         ],
         "code-timestamp": [
-          "11px",
+          "12px",
           {
-            "lineHeight": "14px",
+            "lineHeight": "16px",
             "letterSpacing": "0.02em",
             "fontWeight": "500"
           }

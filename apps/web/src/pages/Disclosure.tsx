@@ -262,7 +262,7 @@ export function Disclosure({ setPage }: { setPage?: (p: Page) => void }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-12 w-full min-h-[calc(100vh-9rem)]">
+      <div className="grid grid-cols-12 w-full lg:min-h-[calc(100vh-9rem)]">
         {/* ── left: matter list ── */}
         <section className="col-span-12 lg:col-span-3 bg-surface-container-low border-r border-surface-border flex flex-col">
           <div className="p-space-md border-b border-surface-border">
@@ -270,7 +270,7 @@ export function Disclosure({ setPage }: { setPage?: (p: Page) => void }) {
               Matters ({matters.length})
             </span>
           </div>
-          <div className="flex-1 overflow-y-auto divide-y divide-surface-border">
+          <div className="flex-1 overflow-y-auto divide-y divide-surface-border max-h-72 lg:max-h-none">
             {matters.map((m) => (
               <button key={m.id} onClick={() => setMatterId(m.id)}
                 className={`w-full text-left p-space-md transition-colors ${
@@ -308,7 +308,7 @@ export function Disclosure({ setPage }: { setPage?: (p: Page) => void }) {
               {/* filter chips */}
               <div className="overflow-x-auto">
                 <AnimatedTabs variant="pill" activeTab={filter} onChange={(k) => setFilter(k as FilterKey)} layoutId="disclosure-filter"
-                  className="bg-surface-container border border-surface-border whitespace-nowrap flex-wrap rounded-xl font-body-compact"
+                  className="bg-surface-container border border-surface-border whitespace-nowrap flex-nowrap md:flex-wrap rounded-xl font-body-compact"
                   tabs={FILTERS.map(({ key, label }) => ({ id: key, label: `${label} · ${counts[key]}` }))} />
               </div>
 
